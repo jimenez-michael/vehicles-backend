@@ -1,0 +1,112 @@
+type VehicleUsage {
+  id: Int!
+  vehicleId: Int!
+  vehicle: Vehicle
+  status: String!
+  # Pickup
+  userId: String!
+  userName: String!
+  userEmail: String!
+  pickupDate: DateTime!
+  pickupMileage: Float!
+  visibleDamage: Boolean!
+  visibleDamageDesc: String
+  brokenWindows: Boolean!
+  lightsWorking: Boolean!
+  mirrorsOk: Boolean!
+  tiresOk: Boolean!
+  dashboardAlerts: Boolean
+  dashboardAlertDetails: String
+  pickupObservations: String
+  # Return
+  returnDate: DateTime
+  returnMileage: Float
+  incidentOccurred: Boolean
+  incidentDescription: String
+  newDamage: Boolean
+  newDamageDesc: String
+  interiorConditionOk: Boolean
+  properlyParked: Boolean
+  returnObservations: String
+  # Timestamps
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+type UsageStats {
+  totalTrips: Int!
+  totalMileage: Float!
+  daysWithoutIncident: Int!
+  lastIncidentDate: DateTime
+}
+
+type MileageByMonth {
+  month: String!
+  mileage: Float!
+}
+
+type TripsByVehicle {
+  vehicleNumber: String!
+  trips: Int!
+}
+
+type IncidentsByMonth {
+  month: String!
+  incidents: Int!
+}
+
+type FleetStats {
+  totalVehicles: Int!
+  activeVehicles: Int!
+  totalTrips: Int!
+  totalMileage: Float!
+  totalIncidents: Int!
+  daysWithoutIncident: Int!
+  mileageByMonth: [MileageByMonth]!
+  tripsByVehicle: [TripsByVehicle]!
+  incidentsByMonth: [IncidentsByMonth]!
+}
+
+input CreatePickupInput {
+  vehicleId: ID!
+  userId: String!
+  userName: String!
+  userEmail: String!
+  pickupDate: DateTime!
+  pickupMileage: Float!
+  visibleDamage: Boolean!
+  visibleDamageDesc: String
+  brokenWindows: Boolean!
+  lightsWorking: Boolean!
+  mirrorsOk: Boolean!
+  tiresOk: Boolean!
+  dashboardAlerts: Boolean
+  dashboardAlertDetails: String
+  pickupObservations: String
+}
+
+input CompleteReturnInput {
+  returnDate: DateTime!
+  returnMileage: Float!
+  incidentOccurred: Boolean!
+  incidentDescription: String
+  newDamage: Boolean!
+  newDamageDesc: String
+  interiorConditionOk: Boolean!
+  properlyParked: Boolean!
+  returnObservations: String
+}
+
+extend type Query {
+  usageRecord(id: ID!): VehicleUsage
+  myUsageRecords: [VehicleUsage]!
+  allUsageRecords: [VehicleUsage]!
+  activeUsageByVehicle(vehicleId: ID!): VehicleUsage
+  usageStats: UsageStats!
+  fleetStats: FleetStats!
+}
+
+extend type Mutation {
+  createPickup(input: CreatePickupInput!): VehicleUsage!
+  completeReturn(id: ID!, input: CompleteReturnInput!): VehicleUsage!
+}

@@ -1,0 +1,36 @@
+type Vehicle {
+  id: Int!
+  vehicleNumber: String!
+  licensePlate: String!
+  program: String!
+  status: String!
+  currentMileage: Float!
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input CreateVehicleInput {
+  vehicleNumber: String!
+  licensePlate: String!
+  program: String!
+  currentMileage: Float!
+}
+
+input UpdateVehicleInput {
+  vehicleNumber: String
+  licensePlate: String
+  program: String
+  currentMileage: Float
+  status: String
+}
+
+extend type Query {
+  vehicle(id: ID!): Vehicle
+  vehicles: [Vehicle]!
+}
+
+extend type Mutation {
+  createVehicle(input: CreateVehicleInput!): Vehicle!
+  updateVehicle(id: ID!, input: UpdateVehicleInput!): Vehicle!
+  deleteVehicle(id: ID!): Vehicle!
+}

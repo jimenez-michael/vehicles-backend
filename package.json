@@ -1,0 +1,36 @@
+{
+  "name": "vehicles-backend",
+  "author": "Michael E. Jiménez Rivera",
+  "license": "MIT",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "postinstall": "prisma generate --schema=prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@apollo/server": "^4.12.0",
+    "@graphql-tools/load-files": "^7.0.1",
+    "@graphql-tools/merge": "^9.0.22",
+    "@graphql-tools/schema": "^10.0.19",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@prisma/client": "^6.4.1",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-jwt": "^8.5.1",
+    "graphql": "^16.10.0",
+    "graphql-scalars": "^1.24.1",
+    "jwks-rsa": "^3.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0",
+    "prisma": "^6.7.0"
+  }
+}

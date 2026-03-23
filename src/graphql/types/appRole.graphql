@@ -1,0 +1,35 @@
+type AppRole {
+  id: String!
+  displayName: String!
+  description: String
+  value: String!
+}
+
+type AppRoleAssignment {
+  id: String!
+  principalId: String!
+  principalDisplayName: String!
+  principalEmail: String
+  appRoleId: String!
+  roleName: String
+  createdDateTime: String
+}
+
+type DirectoryUser {
+  id: String!
+  displayName: String!
+  mail: String
+  userPrincipalName: String!
+  jobTitle: String
+}
+
+extend type Query {
+  appRoleAssignments: [AppRoleAssignment]!
+  appRoles: [AppRole]!
+  searchDirectoryUsers(search: String!): [DirectoryUser]!
+}
+
+extend type Mutation {
+  assignAppRole(principalId: String!, appRoleId: String!): AppRoleAssignment!
+  removeAppRoleAssignment(assignmentId: String!): Boolean!
+}

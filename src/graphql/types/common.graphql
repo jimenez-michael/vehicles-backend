@@ -1,0 +1,14 @@
+type Me {
+  id: String
+  name: String
+  email: String
+  roles: [String]
+}
+
+type Query {
+  me: Me
+}
+
+type Mutation {
+  _empty: String
+}

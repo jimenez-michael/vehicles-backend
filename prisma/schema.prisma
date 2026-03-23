@@ -1,0 +1,63 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../node_modules/.prisma/client"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model Vehicle {
+  id             Int            @id @default(autoincrement())
+  vehicleNumber  String         @unique @db.VarChar(50)
+  licensePlate   String         @unique @db.VarChar(50)
+  program        String         @db.VarChar(255)
+  status         String         @default("AVAILABLE") @db.VarChar(20) // AVAILABLE, IN_USE, OUT_OF_SERVICE
+  currentMileage Float          @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  usages         VehicleUsage[]
+
+  @@map("vehicles")
+}
+
+model VehicleUsage {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  status    String   @default("IN_USE") @db.VarChar(20) // IN_USE, COMPLETED
+
+  // Pickup fields
+  userId             String   @db.VarChar(255)
+  userName           String   @db.VarChar(255)
+  userEmail          String   @db.VarChar(255)
+  pickupDate         DateTime
+  pickupMileage      Float
+  visibleDamage      Boolean  @default(false)
+  visibleDamageDesc  String?  @db.Text
+  brokenWindows      Boolean  @default(false)
+  lightsWorking      Boolean  @default(true)
+  mirrorsOk          Boolean  @default(true)
+  tiresOk            Boolean  @default(true)
+  dashboardAlerts    Boolean? // null = N/A
+  dashboardAlertDetails String? @db.Text
+  pickupObservations String?  @db.Text
+
+  // Return fields
+  returnDate         DateTime?
+  returnMileage      Float?
+  incidentOccurred   Boolean?
+  incidentDescription String? @db.Text
+  newDamage          Boolean?
+  newDamageDesc      String? @db.Text
+  interiorConditionOk Boolean?
+  properlyParked     Boolean?
+  returnObservations String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("vehicle_usages")
+}
