@@ -101,12 +101,32 @@ extend type Query {
   usageRecord(id: ID!): VehicleUsage
   myUsageRecords: [VehicleUsage]!
   allUsageRecords: [VehicleUsage]!
+  myActiveTrips: [VehicleUsage]!
   activeUsageByVehicle(vehicleId: ID!): VehicleUsage
+  usageByVehicle(vehicleId: ID!): [VehicleUsage]!
   usageStats: UsageStats!
   fleetStats: FleetStats!
+}
+
+input UpdateUsageRecordInput {
+  pickupDate: DateTime
+  pickupMileage: Float
+  returnDate: DateTime
+  returnMileage: Float
+  incidentOccurred: Boolean
+  incidentDescription: String
+  newDamage: Boolean
+  newDamageDesc: String
+  interiorConditionOk: Boolean
+  properlyParked: Boolean
+  returnObservations: String
+  pickupObservations: String
 }
 
 extend type Mutation {
   createPickup(input: CreatePickupInput!): VehicleUsage!
   completeReturn(id: ID!, input: CompleteReturnInput!): VehicleUsage!
+  forceCloseUsage(id: ID!): VehicleUsage!
+  updateUsageRecord(id: ID!, input: UpdateUsageRecordInput!): VehicleUsage!
+  deleteUsageRecord(id: ID!): VehicleUsage!
 }

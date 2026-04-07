@@ -1,5 +1,6 @@
 const dayjs = require('dayjs');
 const { requireAuth } = require('../../middleware/requireAuth');
+const { sendIncidentEmail } = require('../../utils/sendIncidentEmail');
 
 const usageResolvers = {
   VehicleUsage: {
@@ -15,6 +16,7 @@ const usageResolvers = {
       requireAuth(context);
       return context.prisma.vehicleUsage.findUnique({
         where: { id: Number(args.id) },
+        include: { vehicle: true },
       });
     },
 
@@ -24,6 +26,7 @@ const usageResolvers = {
       return context.prisma.vehicleUsage.findMany({
         where: { userId },
         orderBy: { pickupDate: 'desc' },
+        include: { vehicle: true },
       });
     },
 
@@ -31,6 +34,17 @@ const usageResolvers = {
       requireAuth(context);
       return context.prisma.vehicleUsage.findMany({
         orderBy: { pickupDate: 'desc' },
+        include: { vehicle: true },
+      });
+    },
+
+    myActiveTrips: (_, __, context) => {
+      requireAuth(context);
+      const userId = context.user.oid || context.user.sub;
+      return context.prisma.vehicleUsage.findMany({
+        where: { userId, status: 'IN_USE' },
+        orderBy: { pickupDate: 'desc' },
+        include: { vehicle: true },
       });
     },
 
@@ -41,6 +55,16 @@ const usageResolvers = {
           vehicleId: Number(args.vehicleId),
           status: 'IN_USE',
         },
+        include: { vehicle: true },
+      });
+    },
+
+    usageByVehicle: (_, args, context) => {
+      requireAuth(context);
+      return context.prisma.vehicleUsage.findMany({
+        where: { vehicleId: Number(args.vehicleId) },
+        orderBy: { pickupDate: 'desc' },
+        include: { vehicle: true },
       });
     },
 
@@ -205,7 +229,7 @@ const usageResolvers = {
         throw new Error('This usage record is already completed');
       }
 
-      const [usage] = await context.prisma.$transaction([
+      const [usage, vehicle] = await context.prisma.$transaction([
         context.prisma.vehicleUsage.update({
           where: { id: usageId },
           data: {
@@ -227,6 +251,104 @@ const usageResolvers = {
             status: 'AVAILABLE',
             currentMileage: input.returnMileage,
           },
+        }),
+      ]);
+
+      // Send incident notification email (fire-and-forget)
+      if (input.incidentOccurred) {
+        sendIncidentEmail(usage, vehicle).catch(() => {});
+      }
+
+      return usage;
+    },
+
+    updateUsageRecord: async (_, { id, input }, context) => {
+      requireAuth(context);
+      const usageId = Number(id);
+
+      const existing = await context.prisma.vehicleUsage.findUnique({
+        where: { id: usageId },
+      });
+      if (!existing) throw new Error('Usage record not found');
+
+      const usage = await context.prisma.vehicleUsage.update({
+        where: { id: usageId },
+        data: {
+          ...(input.pickupDate !== undefined && { pickupDate: input.pickupDate }),
+          ...(input.pickupMileage !== undefined && { pickupMileage: input.pickupMileage }),
+          ...(input.returnDate !== undefined && { returnDate: input.returnDate }),
+          ...(input.returnMileage !== undefined && { returnMileage: input.returnMileage }),
+          ...(input.incidentOccurred !== undefined && { incidentOccurred: input.incidentOccurred }),
+          ...(input.incidentDescription !== undefined && { incidentDescription: input.incidentDescription }),
+          ...(input.newDamage !== undefined && { newDamage: input.newDamage }),
+          ...(input.newDamageDesc !== undefined && { newDamageDesc: input.newDamageDesc }),
+          ...(input.interiorConditionOk !== undefined && { interiorConditionOk: input.interiorConditionOk }),
+          ...(input.properlyParked !== undefined && { properlyParked: input.properlyParked }),
+          ...(input.returnObservations !== undefined && { returnObservations: input.returnObservations }),
+          ...(input.pickupObservations !== undefined && { pickupObservations: input.pickupObservations }),
+        },
+        include: { vehicle: true },
+      });
+
+      // If return mileage was updated, sync vehicle's current mileage
+      if (input.returnMileage !== undefined && existing.status === 'COMPLETED') {
+        await context.prisma.vehicle.update({
+          where: { id: existing.vehicleId },
+          data: { currentMileage: input.returnMileage },
+        });
+      }
+
+      return usage;
+    },
+
+    deleteUsageRecord: async (_, { id }, context) => {
+      requireAuth(context);
+      const usageId = Number(id);
+
+      const existing = await context.prisma.vehicleUsage.findUnique({
+        where: { id: usageId },
+        include: { vehicle: true },
+      });
+      if (!existing) throw new Error('Usage record not found');
+
+      // If the trip is active, release the vehicle back to AVAILABLE
+      if (existing.status === 'IN_USE') {
+        await context.prisma.vehicle.update({
+          where: { id: existing.vehicleId },
+          data: { status: 'AVAILABLE' },
+        });
+      }
+
+      await context.prisma.vehicleUsage.delete({
+        where: { id: usageId },
+      });
+
+      return existing;
+    },
+
+    forceCloseUsage: async (_, { id }, context) => {
+      requireAuth(context);
+      const usageId = Number(id);
+
+      const existing = await context.prisma.vehicleUsage.findUnique({
+        where: { id: usageId },
+      });
+      if (!existing) throw new Error('Usage record not found');
+      if (existing.status !== 'IN_USE') {
+        throw new Error('This usage record is already completed');
+      }
+
+      const [usage] = await context.prisma.$transaction([
+        context.prisma.vehicleUsage.update({
+          where: { id: usageId },
+          data: {
+            returnDate: new Date(),
+            status: 'COMPLETED',
+          },
+        }),
+        context.prisma.vehicle.update({
+          where: { id: existing.vehicleId },
+          data: { status: 'AVAILABLE' },
         }),
       ]);
 

@@ -8,6 +8,12 @@ const vehicleResolvers = {
         where: { id: Number(args.id) },
       });
     },
+    vehicleByPlate: (_, args, context) => {
+      requireAuth(context);
+      return context.prisma.vehicle.findUnique({
+        where: { licensePlate: args.licensePlate },
+      });
+    },
     vehicles: (_, __, context) => {
       requireAuth(context);
       return context.prisma.vehicle.findMany({
@@ -18,13 +24,22 @@ const vehicleResolvers = {
   Mutation: {
     createVehicle: (_, { input }, context) => {
       requireAuth(context);
-      return context.prisma.vehicle.create({ data: input });
+      return context.prisma.vehicle.create({
+        data: {
+          ...input,
+          createdBy: context.user.name || context.user.preferred_username,
+          updatedBy: context.user.name || context.user.preferred_username,
+        },
+      });
     },
     updateVehicle: (_, { id, input }, context) => {
       requireAuth(context);
       return context.prisma.vehicle.update({
         where: { id: Number(id) },
-        data: input,
+        data: {
+          ...input,
+          updatedBy: context.user.name || context.user.preferred_username,
+        },
       });
     },
     deleteVehicle: (_, { id }, context) => {

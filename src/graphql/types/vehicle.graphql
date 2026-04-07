@@ -1,31 +1,49 @@
 type Vehicle {
   id: Int!
   vehicleNumber: String!
+  make: String!
+  model: String!
+  year: Int!
   licensePlate: String!
   program: String!
+  subProgram: String
+  municipality: String
   status: String!
   currentMileage: Float!
+  createdBy: String
+  updatedBy: String
   createdAt: DateTime
   updatedAt: DateTime
 }
 
 input CreateVehicleInput {
   vehicleNumber: String!
+  make: String!
+  model: String!
+  year: Int!
   licensePlate: String!
   program: String!
-  currentMileage: Float!
+  subProgram: String
+  municipality: String
+  currentMileage: Float
 }
 
 input UpdateVehicleInput {
   vehicleNumber: String
+  make: String
+  model: String
+  year: Int
   licensePlate: String
   program: String
+  subProgram: String
+  municipality: String
   currentMileage: Float
   status: String
 }
 
 extend type Query {
   vehicle(id: ID!): Vehicle
+  vehicleByPlate(licensePlate: String!): Vehicle
   vehicles: [Vehicle]!
 }
 
