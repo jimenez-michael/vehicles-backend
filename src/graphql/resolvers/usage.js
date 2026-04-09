@@ -63,24 +63,32 @@ const usageResolvers = {
     usageStats: async (_, __, context) => {
       requireAuth(context);
       const userId = context.user.oid || context.user.sub;
+      const where = { userId, status: 'COMPLETED' };
 
-      const records = await context.prisma.vehicleUsage.findMany({
-        where: { userId, status: 'COMPLETED' },
-        orderBy: { pickupDate: 'desc' },
-      });
+      const [totalTrips, aggregates, lastIncident, oldestTrip] = await Promise.all([
+        context.prisma.vehicleUsage.count({ where }),
+        context.prisma.vehicleUsage.aggregate({
+          where,
+          _sum: { returnMileage: true, pickupMileage: true },
+        }),
+        context.prisma.vehicleUsage.findFirst({
+          where: { ...where, incidentOccurred: true },
+          orderBy: { returnDate: 'desc' },
+          select: { returnDate: true },
+        }),
+        context.prisma.vehicleUsage.findFirst({
+          where,
+          orderBy: { pickupDate: 'asc' },
+          select: { pickupDate: true },
+        }),
+      ]);
 
-      const totalTrips = records.length;
-      const totalMileage = records.reduce(
-        (sum, r) => sum + ((r.returnMileage || 0) - r.pickupMileage),
-        0,
-      );
-
-      const lastIncident = records.find((r) => r.incidentOccurred);
+      const totalMileage = (aggregates._sum.returnMileage || 0) - (aggregates._sum.pickupMileage || 0);
       const lastIncidentDate = lastIncident?.returnDate || null;
       const daysWithoutIncident = lastIncidentDate
         ? dayjs().diff(dayjs(lastIncidentDate), 'day')
         : totalTrips > 0
-          ? dayjs().diff(dayjs(records[records.length - 1].pickupDate), 'day')
+          ? dayjs().diff(dayjs(oldestTrip.pickupDate), 'day')
           : 0;
 
       return { totalTrips, totalMileage, daysWithoutIncident, lastIncidentDate };
@@ -88,33 +96,63 @@ const usageResolvers = {
 
     fleetStats: async (_, __, context) => {
       requireAuth(context);
+      const completedWhere = { status: 'COMPLETED' };
 
-      const vehicles = await context.prisma.vehicle.findMany();
-      const records = await context.prisma.vehicleUsage.findMany({
-        where: { status: 'COMPLETED' },
-        orderBy: { pickupDate: 'asc' },
-        include: { vehicle: true },
-      });
+      // Run scalar aggregations in parallel
+      const [
+        totalVehicles,
+        activeVehicles,
+        totalTrips,
+        mileageAgg,
+        totalIncidents,
+        lastIncident,
+        oldestTrip,
+        chartRecords,
+      ] = await Promise.all([
+        context.prisma.vehicle.count(),
+        context.prisma.vehicle.count({ where: { status: 'IN_USE' } }),
+        context.prisma.vehicleUsage.count({ where: completedWhere }),
+        context.prisma.vehicleUsage.aggregate({
+          where: completedWhere,
+          _sum: { returnMileage: true, pickupMileage: true },
+        }),
+        context.prisma.vehicleUsage.count({ where: { ...completedWhere, incidentOccurred: true } }),
+        context.prisma.vehicleUsage.findFirst({
+          where: { ...completedWhere, incidentOccurred: true },
+          orderBy: { returnDate: 'desc' },
+          select: { returnDate: true },
+        }),
+        context.prisma.vehicleUsage.findFirst({
+          where: completedWhere,
+          orderBy: { pickupDate: 'asc' },
+          select: { pickupDate: true },
+        }),
+        // Only fetch fields needed for chart aggregations
+        context.prisma.vehicleUsage.findMany({
+          where: completedWhere,
+          orderBy: { pickupDate: 'asc' },
+          select: {
+            pickupDate: true,
+            pickupMileage: true,
+            returnMileage: true,
+            returnDate: true,
+            incidentOccurred: true,
+            vehicle: { select: { vehicleNumber: true } },
+          },
+        }),
+      ]);
 
-      const totalVehicles = vehicles.length;
-      const activeVehicles = vehicles.filter((v) => v.status === 'IN_USE').length;
-      const totalTrips = records.length;
-      const totalMileage = records.reduce(
-        (sum, r) => sum + ((r.returnMileage || 0) - r.pickupMileage),
-        0,
-      );
-      const totalIncidents = records.filter((r) => r.incidentOccurred).length;
+      const totalMileage = (mileageAgg._sum.returnMileage || 0) - (mileageAgg._sum.pickupMileage || 0);
 
-      const lastIncident = [...records].reverse().find((r) => r.incidentOccurred);
       const daysWithoutIncident = lastIncident?.returnDate
         ? dayjs().diff(dayjs(lastIncident.returnDate), 'day')
         : totalTrips > 0
-          ? dayjs().diff(dayjs(records[0].pickupDate), 'day')
+          ? dayjs().diff(dayjs(oldestTrip.pickupDate), 'day')
           : 0;
 
       // Mileage by month
       const mileageMap = {};
-      records.forEach((r) => {
+      chartRecords.forEach((r) => {
         const month = dayjs(r.pickupDate).format('MMM YYYY');
         mileageMap[month] = (mileageMap[month] || 0) + ((r.returnMileage || 0) - r.pickupMileage);
       });
@@ -125,7 +163,7 @@ const usageResolvers = {
 
       // Trips by vehicle
       const tripsMap = {};
-      records.forEach((r) => {
+      chartRecords.forEach((r) => {
         const num = r.vehicle?.vehicleNumber || 'Unknown';
         tripsMap[num] = (tripsMap[num] || 0) + 1;
       });
@@ -136,7 +174,7 @@ const usageResolvers = {
 
       // Incidents by month
       const incidentsMap = {};
-      records
+      chartRecords
         .filter((r) => r.incidentOccurred)
         .forEach((r) => {
           const month = dayjs(r.returnDate || r.pickupDate).format('MMM YYYY');
