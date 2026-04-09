@@ -1,0 +1,20 @@
+type IncidentNotificationRecipient {
+  id: Int!
+  userId: String!
+  userName: String!
+  userEmail: String!
+  createdAt: DateTime
+}
+
+extend type Query {
+  incidentNotificationRecipients: [IncidentNotificationRecipient]!
+}
+
+extend type Mutation {
+  addIncidentNotificationRecipient(
+    userId: String!
+    userName: String!
+    userEmail: String!
+  ): IncidentNotificationRecipient!
+  removeIncidentNotificationRecipient(id: ID!): IncidentNotificationRecipient!
+}
