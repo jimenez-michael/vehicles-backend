@@ -72,6 +72,11 @@ model VehicleUsage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([vehicleId])
+  @@index([userId])
+  @@index([status])
+  @@index([pickupDate])
+  @@index([userId, status])
   @@map("vehicle_usages")
 }
 

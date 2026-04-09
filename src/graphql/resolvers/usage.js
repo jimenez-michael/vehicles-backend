@@ -3,14 +3,6 @@ const { requireAuth } = require('../../middleware/requireAuth');
 const { sendIncidentEmail } = require('../../utils/sendIncidentEmail');
 
 const usageResolvers = {
-  VehicleUsage: {
-    vehicle: (parent, _, context) => {
-      return context.prisma.vehicle.findUnique({
-        where: { id: parent.vehicleId },
-      });
-    },
-  },
-
   Query: {
     usageRecord: (_, args, context) => {
       requireAuth(context);
