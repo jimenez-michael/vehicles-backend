@@ -45,9 +45,13 @@ model VehicleUsage {
   visibleDamage      Boolean  @default(false)
   visibleDamageDesc  String?  @db.Text
   brokenWindows      Boolean  @default(false)
+  brokenWindowsDesc  String?  @db.Text
   lightsWorking      Boolean  @default(true)
+  lightsWorkingDesc  String?  @db.Text
   mirrorsOk          Boolean  @default(true)
+  mirrorsOkDesc      String?  @db.Text
   tiresOk            Boolean  @default(true)
+  tiresOkDesc        String?  @db.Text
   dashboardAlerts    Boolean? // null = N/A
   dashboardAlertDetails String? @db.Text
   pickupObservations String?  @db.Text
@@ -60,7 +64,9 @@ model VehicleUsage {
   newDamage          Boolean?
   newDamageDesc      String? @db.Text
   interiorConditionOk Boolean?
+  interiorConditionDesc String? @db.Text
   properlyParked     Boolean?
+  properlyParkedDesc String?  @db.Text
   returnObservations String?  @db.Text
 
   createdAt DateTime @default(now())

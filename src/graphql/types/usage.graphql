@@ -12,9 +12,13 @@ type VehicleUsage {
   visibleDamage: Boolean!
   visibleDamageDesc: String
   brokenWindows: Boolean!
+  brokenWindowsDesc: String
   lightsWorking: Boolean!
+  lightsWorkingDesc: String
   mirrorsOk: Boolean!
+  mirrorsOkDesc: String
   tiresOk: Boolean!
+  tiresOkDesc: String
   dashboardAlerts: Boolean
   dashboardAlertDetails: String
   pickupObservations: String
@@ -26,7 +30,9 @@ type VehicleUsage {
   newDamage: Boolean
   newDamageDesc: String
   interiorConditionOk: Boolean
+  interiorConditionDesc: String
   properlyParked: Boolean
+  properlyParkedDesc: String
   returnObservations: String
   # Timestamps
   createdAt: DateTime
@@ -77,9 +83,13 @@ input CreatePickupInput {
   visibleDamage: Boolean!
   visibleDamageDesc: String
   brokenWindows: Boolean!
+  brokenWindowsDesc: String
   lightsWorking: Boolean!
+  lightsWorkingDesc: String
   mirrorsOk: Boolean!
+  mirrorsOkDesc: String
   tiresOk: Boolean!
+  tiresOkDesc: String
   dashboardAlerts: Boolean
   dashboardAlertDetails: String
   pickupObservations: String
@@ -93,7 +103,9 @@ input CompleteReturnInput {
   newDamage: Boolean!
   newDamageDesc: String
   interiorConditionOk: Boolean!
+  interiorConditionDesc: String
   properlyParked: Boolean!
+  properlyParkedDesc: String
   returnObservations: String
 }
 
@@ -118,7 +130,9 @@ input UpdateUsageRecordInput {
   newDamage: Boolean
   newDamageDesc: String
   interiorConditionOk: Boolean
+  interiorConditionDesc: String
   properlyParked: Boolean
+  properlyParkedDesc: String
   returnObservations: String
   pickupObservations: String
 }
