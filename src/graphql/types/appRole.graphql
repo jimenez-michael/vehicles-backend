@@ -13,7 +13,7 @@ type AppRoleAssignment {
   email: String
   appRoleId: String!
   roleName: String
-  createdAt: String
+  createdAt: DateTime
 }
 
 type DirectoryUser {

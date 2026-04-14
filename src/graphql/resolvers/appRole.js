@@ -57,9 +57,11 @@ const appRoleResolvers = {
       const id = await getServicePrincipalId(client);
 
       // Create in Azure AD
+      console.log('[assignAppRole] Creating Azure AD assignment...', { principalId, appRoleId });
       const result = await client
         .api(`/servicePrincipals/${id}/appRoleAssignments`)
         .post({ principalId, resourceId: id, appRoleId });
+      console.log('[assignAppRole] Azure AD result:', JSON.stringify(result));
 
       // Get role name
       const spRes = await client
@@ -69,7 +71,8 @@ const appRoleResolvers = {
       const role = spRes.appRoles.find((r) => r.id === appRoleId);
 
       // Save to local DB
-      return context.prisma.appUserRole.create({
+      console.log('[assignAppRole] Saving to DB...', { assignmentId: result.id, principalId, displayName, email, appRoleId, roleName: role?.displayName });
+      const dbRecord = await context.prisma.appUserRole.create({
         data: {
           assignmentId: result.id,
           principalId,
@@ -79,6 +82,8 @@ const appRoleResolvers = {
           roleName: role?.displayName || 'Unknown',
         },
       });
+      console.log('[assignAppRole] DB record created:', JSON.stringify(dbRecord));
+      return dbRecord;
     },
 
     removeAppRoleAssignment: async (_, { id }, context) => {
