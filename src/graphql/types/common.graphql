@@ -7,8 +7,20 @@ type Me {
 
 type Query {
   me: Me
+
+  # Reservations
+  myReservations: [Reservation!]!
+  allReservations: [Reservation!]!
+  reservation(id: ID!): Reservation
+  reservationsByVehicle(vehicleId: ID!, startDate: String, endDate: String): [Reservation!]!
 }
 
 type Mutation {
   _empty: String
+
+  # Reservations
+  createReservation(input: CreateReservationInput!): Reservation!
+  updateReservation(id: ID!, input: UpdateReservationInput!): Reservation!
+  cancelReservation(id: ID!): Reservation!
+  deleteReservation(id: ID!): Reservation!
 }

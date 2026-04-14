@@ -1,0 +1,44 @@
+type ReservationVehicle {
+  id: Int!
+  vehicleNumber: String!
+  make: String!
+  model: String!
+  year: Int!
+  licensePlate: String!
+  program: String!
+}
+
+type Reservation {
+  id: Int!
+  vehicleId: Int!
+  vehicle: ReservationVehicle!
+  userId: String!
+  userName: String!
+  userEmail: String!
+  startDate: DateTime!
+  endDate: DateTime!
+  purpose: String
+  notes: String
+  status: String!
+  calendarEventId: String
+  createdBy: String
+  updatedBy: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input CreateReservationInput {
+  vehicleId: Int!
+  startDate: DateTime!
+  endDate: DateTime!
+  purpose: String
+  notes: String
+}
+
+input UpdateReservationInput {
+  startDate: DateTime
+  endDate: DateTime
+  purpose: String
+  notes: String
+  calendarEventId: String
+}
