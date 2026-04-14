@@ -6,13 +6,14 @@ type AppRole {
 }
 
 type AppRoleAssignment {
-  id: String!
+  id: Int!
+  assignmentId: String!
   principalId: String!
-  principalDisplayName: String!
-  principalEmail: String
+  displayName: String!
+  email: String
   appRoleId: String!
   roleName: String
-  createdDateTime: String
+  createdAt: String
 }
 
 type DirectoryUser {
@@ -30,6 +31,7 @@ extend type Query {
 }
 
 extend type Mutation {
-  assignAppRole(principalId: String!, appRoleId: String!): AppRoleAssignment!
-  removeAppRoleAssignment(assignmentId: String!): Boolean!
+  assignAppRole(principalId: String!, appRoleId: String!, displayName: String!, email: String): AppRoleAssignment!
+  removeAppRoleAssignment(id: Int!): Boolean!
+  syncAppRoleAssignments: [AppRoleAssignment]!
 }

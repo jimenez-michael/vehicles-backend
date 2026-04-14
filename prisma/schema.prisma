@@ -80,6 +80,20 @@ model VehicleUsage {
   @@map("vehicle_usages")
 }
 
+model AppUserRole {
+  id              Int      @id @default(autoincrement())
+  assignmentId    String   @unique @db.VarChar(255) // Azure AD assignment ID
+  principalId     String   @db.VarChar(255)
+  displayName     String   @db.VarChar(255)
+  email           String?  @db.VarChar(255)
+  appRoleId       String   @db.VarChar(255)
+  roleName        String?  @db.VarChar(255)
+  createdAt       DateTime @default(now())
+
+  @@index([principalId])
+  @@map("app_user_roles")
+}
+
 model IncidentNotificationRecipient {
   id        Int      @id @default(autoincrement())
   userId    String   @db.VarChar(255)
