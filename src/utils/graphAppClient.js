@@ -3,6 +3,11 @@ const { Client } = require('@microsoft/microsoft-graph-client');
 let cachedToken = null;
 let tokenExpiry = 0;
 
+function clearTokenCache() {
+  cachedToken = null;
+  tokenExpiry = 0;
+}
+
 async function getAppToken() {
   if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
 
@@ -41,4 +46,4 @@ function createAppGraphClient() {
   });
 }
 
-module.exports = { createAppGraphClient };
+module.exports = { createAppGraphClient, clearTokenCache };

@@ -1,5 +1,6 @@
 const { GraphQLError } = require('graphql');
 const { requireAuth } = require('../../middleware/requireAuth');
+const { sendReservationCancelledEmail } = require('../../utils/sendReservationCancelledEmail');
 
 const reservationResolvers = {
   Query: {
@@ -90,7 +91,7 @@ const reservationResolvers = {
           purpose: input.purpose,
           notes: input.notes,
           status: 'CONFIRMED',
-          createdBy: userName,
+          createdBy: userEmail,
         },
         include: { vehicle: true },
       });
@@ -99,11 +100,17 @@ const reservationResolvers = {
     updateReservation: async (_, { id, input }, context) => {
       requireAuth(context);
       const reservationId = Number(id);
+      const userId = context.user.oid || context.user.sub;
+      const roles = context.user.roles || [];
 
       const existing = await context.prisma.reservation.findUnique({
         where: { id: reservationId },
       });
       if (!existing) throw new GraphQLError('Reservation not found');
+
+      if (existing.userId !== userId && !roles.includes('Admin')) {
+        throw new GraphQLError('You can only edit your own reservations');
+      }
 
       // If dates changed, re-check overlap
       const newStartDate = input.startDate ? new Date(input.startDate) : existing.startDate;
@@ -128,7 +135,7 @@ const reservationResolvers = {
         }
       }
 
-      const userName = context.user.name || context.user.preferred_username;
+      const userEmail = context.user.preferred_username;
 
       return context.prisma.reservation.update({
         where: { id: reservationId },
@@ -137,8 +144,7 @@ const reservationResolvers = {
           ...(input.endDate !== undefined && { endDate: newEndDate }),
           ...(input.purpose !== undefined && { purpose: input.purpose }),
           ...(input.notes !== undefined && { notes: input.notes }),
-          ...(input.calendarEventId !== undefined && { calendarEventId: input.calendarEventId }),
-          updatedBy: userName,
+          updatedBy: userEmail,
         },
         include: { vehicle: true },
       });
@@ -147,36 +153,57 @@ const reservationResolvers = {
     cancelReservation: async (_, { id }, context) => {
       requireAuth(context);
       const reservationId = Number(id);
+      const userId = context.user.oid || context.user.sub;
+      const roles = context.user.roles || [];
 
       const existing = await context.prisma.reservation.findUnique({
         where: { id: reservationId },
+        include: { vehicle: true },
       });
       if (!existing) throw new GraphQLError('Reservation not found');
+
+      if (existing.userId !== userId && !roles.includes('Admin')) {
+        throw new GraphQLError('You can only cancel your own reservations');
+      }
+
       if (existing.status === 'CANCELLED') {
         throw new GraphQLError('This reservation is already cancelled');
       }
 
-      const userName = context.user.name || context.user.preferred_username;
+      const userEmail = context.user.preferred_username;
 
-      return context.prisma.reservation.update({
+      const cancelled = await context.prisma.reservation.update({
         where: { id: reservationId },
         data: {
           status: 'CANCELLED',
-          updatedBy: userName,
+          updatedBy: userEmail,
         },
         include: { vehicle: true },
       });
+
+      // Notify reservation owner if cancelled by someone else (admin)
+      if (existing.userId !== userId) {
+        sendReservationCancelledEmail(existing, userEmail).catch(() => {});
+      }
+
+      return cancelled;
     },
 
     deleteReservation: async (_, { id }, context) => {
       requireAuth(context);
       const reservationId = Number(id);
+      const userId = context.user.oid || context.user.sub;
+      const roles = context.user.roles || [];
 
       const existing = await context.prisma.reservation.findUnique({
         where: { id: reservationId },
         include: { vehicle: true },
       });
       if (!existing) throw new GraphQLError('Reservation not found');
+
+      if (existing.userId !== userId && !roles.includes('Admin')) {
+        throw new GraphQLError('You can only delete your own reservations');
+      }
 
       await context.prisma.reservation.delete({
         where: { id: reservationId },

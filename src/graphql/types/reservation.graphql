@@ -6,6 +6,7 @@ type ReservationVehicle {
   year: Int!
   licensePlate: String!
   program: String!
+  status: String!
 }
 
 type Reservation {
@@ -20,7 +21,6 @@ type Reservation {
   purpose: String
   notes: String
   status: String!
-  calendarEventId: String
   createdBy: String
   updatedBy: String
   createdAt: DateTime!
@@ -40,5 +40,4 @@ input UpdateReservationInput {
   endDate: DateTime
   purpose: String
   notes: String
-  calendarEventId: String
 }
