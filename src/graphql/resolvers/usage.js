@@ -97,6 +97,9 @@ const usageResolvers = {
     fleetStats: async (_, __, context) => {
       requireAuth(context);
       const completedWhere = { status: 'COMPLETED' };
+      const now = dayjs();
+      const thisMonthStart = now.startOf('month').toDate();
+      const lastMonthStart = now.subtract(1, 'month').startOf('month').toDate();
 
       // Run scalar aggregations in parallel
       const [
@@ -108,6 +111,11 @@ const usageResolvers = {
         lastIncident,
         oldestTrip,
         chartRecords,
+        recentRecords,
+        tripsThisMonth,
+        tripsLastMonth,
+        incidentsThisMonth,
+        incidentsLastMonth,
       ] = await Promise.all([
         context.prisma.vehicle.count(),
         context.prisma.vehicle.count({ where: { status: 'IN_USE' } }),
@@ -138,6 +146,26 @@ const usageResolvers = {
             returnDate: true,
             incidentOccurred: true,
             vehicle: { select: { vehicleNumber: true } },
+          },
+        }),
+        context.prisma.vehicleUsage.findMany({
+          orderBy: { pickupDate: 'desc' },
+          take: 10,
+          include: { vehicle: true },
+        }),
+        context.prisma.vehicleUsage.count({
+          where: { pickupDate: { gte: thisMonthStart } },
+        }),
+        context.prisma.vehicleUsage.count({
+          where: { pickupDate: { gte: lastMonthStart, lt: thisMonthStart } },
+        }),
+        context.prisma.vehicleUsage.count({
+          where: { pickupDate: { gte: thisMonthStart }, incidentOccurred: true },
+        }),
+        context.prisma.vehicleUsage.count({
+          where: {
+            pickupDate: { gte: lastMonthStart, lt: thisMonthStart },
+            incidentOccurred: true,
           },
         }),
       ]);
@@ -185,6 +213,18 @@ const usageResolvers = {
         incidents,
       }));
 
+      // Daily activity (trips + incidents per day) — drives the dashboard chart
+      const dailyMap = {};
+      chartRecords.forEach((r) => {
+        const date = dayjs(r.pickupDate).format('YYYY-MM-DD');
+        if (!dailyMap[date]) dailyMap[date] = { date, trips: 0, incidents: 0 };
+        dailyMap[date].trips += 1;
+        if (r.incidentOccurred) dailyMap[date].incidents += 1;
+      });
+      const dailyActivity = Object.values(dailyMap).sort((a, b) =>
+        a.date.localeCompare(b.date),
+      );
+
       return {
         totalVehicles,
         activeVehicles,
@@ -195,6 +235,12 @@ const usageResolvers = {
         mileageByMonth,
         tripsByVehicle,
         incidentsByMonth,
+        dailyActivity,
+        recentRecords,
+        tripsThisMonth,
+        tripsLastMonth,
+        incidentsThisMonth,
+        incidentsLastMonth,
       };
     },
   },

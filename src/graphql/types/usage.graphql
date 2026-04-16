@@ -61,6 +61,12 @@ type IncidentsByMonth {
   incidents: Int!
 }
 
+type DailyActivity {
+  date: String!
+  trips: Int!
+  incidents: Int!
+}
+
 type FleetStats {
   totalVehicles: Int!
   activeVehicles: Int!
@@ -71,6 +77,12 @@ type FleetStats {
   mileageByMonth: [MileageByMonth]!
   tripsByVehicle: [TripsByVehicle]!
   incidentsByMonth: [IncidentsByMonth]!
+  dailyActivity: [DailyActivity!]!
+  recentRecords: [VehicleUsage!]!
+  tripsThisMonth: Int!
+  tripsLastMonth: Int!
+  incidentsThisMonth: Int!
+  incidentsLastMonth: Int!
 }
 
 input CreatePickupInput {
