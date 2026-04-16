@@ -30,6 +30,59 @@ const reservationResolvers = {
       });
     },
 
+    reservationsPage: async (_, { input }, context) => {
+      requireAuth(context);
+      const page = Math.max(1, input?.page ?? 1);
+      const pageSize = Math.min(100, Math.max(1, input?.pageSize ?? 25));
+      const search = input?.search?.trim();
+      const status = input?.status;
+      const scope = input?.scope === 'mine' ? 'mine' : 'all';
+      const sortBy = input?.sortBy ?? 'startDate';
+      const sortDir = input?.sortDir === 'asc' ? 'asc' : 'desc';
+
+      const allowedSort = new Set(['startDate', 'endDate', 'status', 'createdAt']);
+      const orderByField = allowedSort.has(sortBy) ? sortBy : 'startDate';
+
+      const and = [];
+      if (scope === 'mine') {
+        const userId = context.user.oid || context.user.sub;
+        and.push({ userId });
+      }
+      if (status && status !== 'all') and.push({ status });
+      if (search) {
+        and.push({
+          OR: [
+            { userName: { contains: search, mode: 'insensitive' } },
+            { userEmail: { contains: search, mode: 'insensitive' } },
+            { vehicle: { vehicleNumber: { contains: search, mode: 'insensitive' } } },
+            { vehicle: { licensePlate: { contains: search, mode: 'insensitive' } } },
+            { vehicle: { make: { contains: search, mode: 'insensitive' } } },
+            { vehicle: { model: { contains: search, mode: 'insensitive' } } },
+          ],
+        });
+      }
+      const where = and.length ? { AND: and } : {};
+
+      const [items, total] = await Promise.all([
+        context.prisma.reservation.findMany({
+          where,
+          orderBy: { [orderByField]: sortDir },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          include: { vehicle: true },
+        }),
+        context.prisma.reservation.count({ where }),
+      ]);
+
+      return {
+        items,
+        total,
+        page,
+        pageSize,
+        hasMore: page * pageSize < total,
+      };
+    },
+
     reservationsByVehicle: (_, args, context) => {
       requireAuth(context);
       const where = {

@@ -36,6 +36,69 @@ const appRoleResolvers = {
       });
     },
 
+    usersPage: async (_, { input }, context) => {
+      requireAuth(context);
+      const page = Math.max(1, input?.page ?? 1);
+      const pageSize = Math.min(100, Math.max(1, input?.pageSize ?? 25));
+      const search = input?.search?.trim();
+      const sortBy = input?.sortBy ?? 'displayName';
+      const sortDir = input?.sortDir === 'desc' ? 'desc' : 'asc';
+
+      const allowedSort = new Set(['displayName', 'email']);
+      const orderByField = allowedSort.has(sortBy) ? sortBy : 'displayName';
+
+      const where = search
+        ? {
+            OR: [
+              { displayName: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {};
+
+      // distinct users matching the search
+      const [uniqueUsers, allDistinct] = await Promise.all([
+        context.prisma.appUserRole.findMany({
+          where,
+          distinct: ['principalId'],
+          orderBy: { [orderByField]: sortDir },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          select: { principalId: true, displayName: true, email: true },
+        }),
+        context.prisma.appUserRole.findMany({
+          where,
+          distinct: ['principalId'],
+          select: { principalId: true },
+        }),
+      ]);
+
+      const principalIds = uniqueUsers.map((u) => u.principalId);
+      const assignments = principalIds.length
+        ? await context.prisma.appUserRole.findMany({
+            where: { principalId: { in: principalIds } },
+          })
+        : [];
+
+      const byPrincipal = assignments.reduce((acc, a) => {
+        (acc[a.principalId] = acc[a.principalId] || []).push(a);
+        return acc;
+      }, {});
+
+      return {
+        items: uniqueUsers.map((u) => ({
+          principalId: u.principalId,
+          displayName: u.displayName,
+          email: u.email,
+          assignments: byPrincipal[u.principalId] ?? [],
+        })),
+        total: allDistinct.length,
+        page,
+        pageSize,
+        hasMore: page * pageSize < allDistinct.length,
+      };
+    },
+
     searchDirectoryUsers: async (_, { search }, context) => {
       requireAuth(context);
       const client = createAppGraphClient();

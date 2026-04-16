@@ -121,10 +121,31 @@ input CompleteReturnInput {
   returnObservations: String
 }
 
+input UsageRecordsPageInput {
+  page: Int = 1
+  pageSize: Int = 25
+  search: String
+  status: String
+  scope: String = "all"
+  incidentsOnly: Boolean
+  vehicleId: Int
+  sortBy: String = "pickupDate"
+  sortDir: String = "desc"
+}
+
+type UsageRecordsPage {
+  items: [VehicleUsage!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  hasMore: Boolean!
+}
+
 extend type Query {
   usageRecord(id: ID!): VehicleUsage
   myUsageRecords: [VehicleUsage]!
   allUsageRecords: [VehicleUsage]!
+  usageRecordsPage(input: UsageRecordsPageInput): UsageRecordsPage!
   myActiveTrips: [VehicleUsage]!
   activeUsageByVehicle(vehicleId: ID!): VehicleUsage
   usageByVehicle(vehicleId: ID!): [VehicleUsage]!

@@ -28,6 +28,30 @@ extend type Query {
   appRoleAssignments: [AppRoleAssignment]!
   appRoles: [AppRole]!
   searchDirectoryUsers(search: String!): [DirectoryUser]!
+  usersPage(input: UsersPageInput): UsersPage!
+}
+
+type GroupedUser {
+  principalId: String!
+  displayName: String!
+  email: String
+  assignments: [AppRoleAssignment!]!
+}
+
+input UsersPageInput {
+  page: Int = 1
+  pageSize: Int = 25
+  search: String
+  sortBy: String = "displayName"
+  sortDir: String = "asc"
+}
+
+type UsersPage {
+  items: [GroupedUser!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  hasMore: Boolean!
 }
 
 extend type Mutation {

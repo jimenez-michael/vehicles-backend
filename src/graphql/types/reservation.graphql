@@ -41,3 +41,21 @@ input UpdateReservationInput {
   purpose: String
   notes: String
 }
+
+input ReservationsPageInput {
+  page: Int = 1
+  pageSize: Int = 25
+  search: String
+  status: String
+  scope: String = "all"
+  sortBy: String = "startDate"
+  sortDir: String = "desc"
+}
+
+type ReservationsPage {
+  items: [Reservation!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  hasMore: Boolean!
+}

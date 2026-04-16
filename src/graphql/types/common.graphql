@@ -13,6 +13,7 @@ type Query {
   allReservations: [Reservation!]!
   reservation(id: ID!): Reservation
   reservationsByVehicle(vehicleId: ID!, startDate: String, endDate: String): [Reservation!]!
+  reservationsPage(input: ReservationsPageInput): ReservationsPage!
 }
 
 type Mutation {

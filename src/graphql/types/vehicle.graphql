@@ -41,10 +41,28 @@ input UpdateVehicleInput {
   status: String
 }
 
+input VehiclesPageInput {
+  page: Int = 1
+  pageSize: Int = 25
+  search: String
+  status: String
+  sortBy: String = "vehicleNumber"
+  sortDir: String = "asc"
+}
+
+type VehiclesPage {
+  items: [Vehicle!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  hasMore: Boolean!
+}
+
 extend type Query {
   vehicle(id: ID!): Vehicle
   vehicleByPlate(licensePlate: String!): Vehicle
   vehicles: [Vehicle]!
+  vehiclesPage(input: VehiclesPageInput): VehiclesPage!
 }
 
 extend type Mutation {
