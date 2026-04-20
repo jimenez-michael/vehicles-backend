@@ -10,9 +10,27 @@ async function sendIncidentEmail(usage, vehicle) {
   // Lazy-import prisma to avoid circular deps
   const prisma = require('../config/prisma');
 
-  const recipients = await prisma.incidentNotificationRecipient.findMany();
-  if (recipients.length === 0) {
+  const allRecipients = await prisma.incidentNotificationRecipient.findMany();
+  if (allRecipients.length === 0) {
     console.log('[sendIncidentEmail] No recipients configured — skipping email');
+    return;
+  }
+
+  // Domain gating: PR Vector Control reporters notify everyone;
+  // all other reporters (e.g. prsciencetrust.org) must NOT notify prvectorcontrol.org recipients.
+  const reporterIsVectorControl = (usage.userEmail || '')
+    .toLowerCase()
+    .endsWith('@prvectorcontrol.org');
+  const recipients = reporterIsVectorControl
+    ? allRecipients
+    : allRecipients.filter(
+        (r) => !(r.userEmail || '').toLowerCase().endsWith('@prvectorcontrol.org'),
+      );
+
+  if (recipients.length === 0) {
+    console.log(
+      `[sendIncidentEmail] No eligible recipients for reporter ${usage.userEmail} — skipping email`,
+    );
     return;
   }
 

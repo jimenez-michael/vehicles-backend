@@ -1,6 +1,7 @@
 const dayjs = require('dayjs');
 const { requireAuth } = require('../../middleware/requireAuth');
 const { sendIncidentEmail } = require('../../utils/sendIncidentEmail');
+const { sendForceCloseEmail } = require('../../utils/sendForceCloseEmail');
 
 const usageResolvers = {
   Query: {
@@ -324,6 +325,9 @@ const usageResolvers = {
             userEmail: input.userEmail,
             pickupDate: input.pickupDate,
             pickupMileage: input.pickupMileage,
+            gasLevel: input.gasLevel,
+            interiorCleanliness: input.interiorCleanliness,
+            exteriorCleanliness: input.exteriorCleanliness,
             visibleDamage: input.visibleDamage,
             visibleDamageDesc: input.visibleDamageDesc,
             brokenWindows: input.brokenWindows,
@@ -370,6 +374,9 @@ const usageResolvers = {
           data: {
             returnDate: input.returnDate,
             returnMileage: input.returnMileage,
+            gasFilledUp: input.gasFilledUp,
+            returnInteriorCleanliness: input.returnInteriorCleanliness,
+            returnExteriorCleanliness: input.returnExteriorCleanliness,
             incidentOccurred: input.incidentOccurred,
             incidentDescription: input.incidentDescription,
             newDamage: input.newDamage,
@@ -413,8 +420,14 @@ const usageResolvers = {
         data: {
           ...(input.pickupDate !== undefined && { pickupDate: input.pickupDate }),
           ...(input.pickupMileage !== undefined && { pickupMileage: input.pickupMileage }),
+          ...(input.gasLevel !== undefined && { gasLevel: input.gasLevel }),
+          ...(input.interiorCleanliness !== undefined && { interiorCleanliness: input.interiorCleanliness }),
+          ...(input.exteriorCleanliness !== undefined && { exteriorCleanliness: input.exteriorCleanliness }),
           ...(input.returnDate !== undefined && { returnDate: input.returnDate }),
           ...(input.returnMileage !== undefined && { returnMileage: input.returnMileage }),
+          ...(input.gasFilledUp !== undefined && { gasFilledUp: input.gasFilledUp }),
+          ...(input.returnInteriorCleanliness !== undefined && { returnInteriorCleanliness: input.returnInteriorCleanliness }),
+          ...(input.returnExteriorCleanliness !== undefined && { returnExteriorCleanliness: input.returnExteriorCleanliness }),
           ...(input.incidentOccurred !== undefined && { incidentOccurred: input.incidentOccurred }),
           ...(input.incidentDescription !== undefined && { incidentDescription: input.incidentDescription }),
           ...(input.newDamage !== undefined && { newDamage: input.newDamage }),
@@ -471,11 +484,18 @@ const usageResolvers = {
 
       const existing = await context.prisma.vehicleUsage.findUnique({
         where: { id: usageId },
+        include: { vehicle: true },
       });
       if (!existing) throw new Error('Usage record not found');
       if (existing.status !== 'IN_USE') {
         throw new Error('This usage record is already completed');
       }
+
+      const actor = {
+        id: context.user.oid || context.user.sub || null,
+        name: context.user.name || context.user.preferred_username || null,
+        email: context.user.preferred_username || null,
+      };
 
       const [usage] = await context.prisma.$transaction([
         context.prisma.vehicleUsage.update({
@@ -489,7 +509,36 @@ const usageResolvers = {
           where: { id: existing.vehicleId },
           data: { status: 'AVAILABLE' },
         }),
+        context.prisma.auditLog.create({
+          data: {
+            action: 'FORCE_CLOSE_USAGE',
+            actorId: actor.id,
+            actorName: actor.name,
+            actorEmail: actor.email,
+            targetType: 'VehicleUsage',
+            targetId: String(usageId),
+            metadata: JSON.stringify({
+              vehicleId: existing.vehicleId,
+              vehicleNumber: existing.vehicle?.vehicleNumber,
+              licensePlate: existing.vehicle?.licensePlate,
+              originalUserId: existing.userId,
+              originalUserName: existing.userName,
+              originalUserEmail: existing.userEmail,
+              pickupDate: existing.pickupDate,
+              pickupMileage: existing.pickupMileage,
+            }),
+          },
+        }),
       ]);
+
+      // Fire-and-forget — email failure must not block the force-close.
+      sendForceCloseEmail({
+        abandonedUsage: existing,
+        vehicle: existing.vehicle,
+        actor,
+      }).catch((err) =>
+        console.error('[forceCloseUsage] email error:', err.message || err),
+      );
 
       return usage;
     },

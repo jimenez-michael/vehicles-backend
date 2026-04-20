@@ -43,6 +43,9 @@ model VehicleUsage {
   userEmail          String   @db.VarChar(255)
   pickupDate         DateTime
   pickupMileage      Float
+  gasLevel             String   @default("full") @db.VarChar(10) // full, 3/4, 1/2, 1/4, empty
+  interiorCleanliness  String   @default("clean") @db.VarChar(20) // clean, acceptable, dirty
+  exteriorCleanliness  String   @default("clean") @db.VarChar(20) // clean, acceptable, dirty
   visibleDamage      Boolean  @default(false)
   visibleDamageDesc  String?  @db.Text
   brokenWindows      Boolean  @default(false)
@@ -60,6 +63,9 @@ model VehicleUsage {
   // Return fields
   returnDate         DateTime?
   returnMileage      Float?
+  gasFilledUp            Boolean?
+  returnInteriorCleanliness String? @db.VarChar(20) // clean, acceptable, dirty
+  returnExteriorCleanliness String? @db.VarChar(20) // clean, acceptable, dirty
   incidentOccurred   Boolean?
   incidentDescription String? @db.Text
   newDamage          Boolean?
@@ -104,6 +110,24 @@ model IncidentNotificationRecipient {
 
   @@unique([userId])
   @@map("incident_notification_recipients")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  action      String   @db.VarChar(100) // e.g. FORCE_CLOSE_USAGE
+  actorId     String?  @db.VarChar(255)
+  actorName   String?  @db.VarChar(255)
+  actorEmail  String?  @db.VarChar(255)
+  targetType  String?  @db.VarChar(100) // e.g. VehicleUsage
+  targetId    String?  @db.VarChar(255)
+  metadata    String?  @db.NVarChar(Max) // JSON blob
+  createdAt   DateTime @default(now())
+
+  @@index([action])
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
 
 model Reservation {

@@ -1,0 +1,31 @@
+type AuditLog {
+  id: Int!
+  action: String!
+  actorId: String
+  actorName: String
+  actorEmail: String
+  targetType: String
+  targetId: String
+  metadata: String
+  createdAt: DateTime!
+}
+
+input AuditLogsPageInput {
+  page: Int = 1
+  pageSize: Int = 25
+  search: String
+  action: String
+  targetType: String
+}
+
+type AuditLogsPage {
+  items: [AuditLog!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  hasMore: Boolean!
+}
+
+extend type Query {
+  auditLogsPage(input: AuditLogsPageInput): AuditLogsPage!
+}

@@ -9,6 +9,9 @@ type VehicleUsage {
   userEmail: String!
   pickupDate: DateTime!
   pickupMileage: Float!
+  gasLevel: String!
+  interiorCleanliness: String!
+  exteriorCleanliness: String!
   visibleDamage: Boolean!
   visibleDamageDesc: String
   brokenWindows: Boolean!
@@ -25,6 +28,9 @@ type VehicleUsage {
   # Return
   returnDate: DateTime
   returnMileage: Float
+  gasFilledUp: Boolean
+  returnInteriorCleanliness: String
+  returnExteriorCleanliness: String
   incidentOccurred: Boolean
   incidentDescription: String
   newDamage: Boolean
@@ -92,6 +98,9 @@ input CreatePickupInput {
   userEmail: String!
   pickupDate: DateTime!
   pickupMileage: Float!
+  gasLevel: String!
+  interiorCleanliness: String!
+  exteriorCleanliness: String!
   visibleDamage: Boolean!
   visibleDamageDesc: String
   brokenWindows: Boolean!
@@ -110,6 +119,9 @@ input CreatePickupInput {
 input CompleteReturnInput {
   returnDate: DateTime!
   returnMileage: Float!
+  gasFilledUp: Boolean
+  returnInteriorCleanliness: String
+  returnExteriorCleanliness: String
   incidentOccurred: Boolean!
   incidentDescription: String
   newDamage: Boolean!
@@ -156,8 +168,14 @@ extend type Query {
 input UpdateUsageRecordInput {
   pickupDate: DateTime
   pickupMileage: Float
+  gasLevel: String
+  interiorCleanliness: String
+  exteriorCleanliness: String
   returnDate: DateTime
   returnMileage: Float
+  gasFilledUp: Boolean
+  returnInteriorCleanliness: String
+  returnExteriorCleanliness: String
   incidentOccurred: Boolean
   incidentDescription: String
   newDamage: Boolean
