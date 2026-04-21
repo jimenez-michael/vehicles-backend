@@ -190,19 +190,21 @@ const appRoleResolvers = {
         spRes.appRoles.map((r) => [r.id, r.displayName]),
       );
 
-      // Get user emails
+      // Get user emails — Graph's $filter caps OR clauses at 15, so chunk.
       const userIds = [...new Set(assignRes.value.map((a) => a.principalId))];
-      let emailMap = {};
-      if (userIds.length > 0) {
-        const filter = userIds.map((uid) => `'${uid}'`).join(',');
+      const emailMap = {};
+      const CHUNK_SIZE = 15;
+      for (let i = 0; i < userIds.length; i += CHUNK_SIZE) {
+        const chunk = userIds.slice(i, i + CHUNK_SIZE);
+        const filter = chunk.map((uid) => `'${uid}'`).join(',');
         const usersRes = await client
           .api('/users')
           .filter(`id in (${filter})`)
           .select('id,mail,userPrincipalName')
           .get();
-        emailMap = Object.fromEntries(
-          usersRes.value.map((u) => [u.id, u.mail || u.userPrincipalName]),
-        );
+        for (const u of usersRes.value) {
+          emailMap[u.id] = u.mail || u.userPrincipalName;
+        }
       }
 
       // Clear local table and re-seed from Azure AD

@@ -14,6 +14,7 @@ type Query {
   reservation(id: ID!): Reservation
   reservationsByVehicle(vehicleId: ID!, startDate: String, endDate: String): [Reservation!]!
   reservationsPage(input: ReservationsPageInput): ReservationsPage!
+  pendingApprovals: [Reservation!]!
 }
 
 type Mutation {
@@ -24,4 +25,5 @@ type Mutation {
   updateReservation(id: ID!, input: UpdateReservationInput!): Reservation!
   cancelReservation(id: ID!): Reservation!
   deleteReservation(id: ID!): Reservation!
+  decideReservationApproval(id: ID!, input: ApprovalDecisionInput!): Reservation!
 }

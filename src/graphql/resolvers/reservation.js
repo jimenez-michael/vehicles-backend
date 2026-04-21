@@ -1,6 +1,8 @@
 const { GraphQLError } = require('graphql');
 const { requireAuth } = require('../../middleware/requireAuth');
 const { sendReservationCancelledEmail } = require('../../utils/sendReservationCancelledEmail');
+const { sendOvernightApprovalRequestEmail } = require('../../utils/sendOvernightApprovalRequestEmail');
+const { sendOvernightApprovalDecisionEmail } = require('../../utils/sendOvernightApprovalDecisionEmail');
 
 const reservationResolvers = {
   Query: {
@@ -87,7 +89,7 @@ const reservationResolvers = {
       requireAuth(context);
       const where = {
         vehicleId: Number(args.vehicleId),
-        status: 'CONFIRMED',
+        status: { in: ['CONFIRMED', 'PENDING_APPROVAL'] },
       };
 
       if (args.startDate && args.endDate) {
@@ -97,6 +99,21 @@ const reservationResolvers = {
 
       return context.prisma.reservation.findMany({
         where,
+        orderBy: { startDate: 'asc' },
+        include: { vehicle: true },
+      });
+    },
+
+    pendingApprovals: (_, __, context) => {
+      requireAuth(context);
+      const roles = context.user.roles || [];
+      if (!roles.includes('Approver') && !roles.includes('Admin')) {
+        throw new GraphQLError('Forbidden', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+      return context.prisma.reservation.findMany({
+        where: { status: 'PENDING_APPROVAL' },
         orderBy: { startDate: 'asc' },
         include: { vehicle: true },
       });
@@ -116,11 +133,21 @@ const reservationResolvers = {
       });
       if (!vehicle) throw new GraphQLError('Vehicle not found');
 
-      // Check for overlapping confirmed reservations
+      const isOvernight = input.isOvernight === true;
+      const overnightDetails = input.overnightDetails?.trim() || null;
+
+      if (isOvernight && !overnightDetails) {
+        throw new GraphQLError(
+          'Overnight details are required when the driver will keep the vehicle overnight',
+          { extensions: { code: 'OVERNIGHT_DETAILS_REQUIRED' } }
+        );
+      }
+
+      // Check for overlapping active reservations (confirmed or pending approval)
       const overlapping = await context.prisma.reservation.findFirst({
         where: {
           vehicleId,
-          status: 'CONFIRMED',
+          status: { in: ['CONFIRMED', 'PENDING_APPROVAL'] },
           startDate: { lt: new Date(input.endDate) },
           endDate: { gt: new Date(input.startDate) },
         },
@@ -133,7 +160,9 @@ const reservationResolvers = {
         );
       }
 
-      return context.prisma.reservation.create({
+      const status = isOvernight ? 'PENDING_APPROVAL' : 'CONFIRMED';
+
+      const reservation = await context.prisma.reservation.create({
         data: {
           vehicleId,
           userId,
@@ -143,11 +172,21 @@ const reservationResolvers = {
           endDate: new Date(input.endDate),
           purpose: input.purpose,
           notes: input.notes,
-          status: 'CONFIRMED',
+          status,
+          isOvernight,
+          overnightDetails,
           createdBy: userEmail,
         },
         include: { vehicle: true },
       });
+
+      if (isOvernight) {
+        sendOvernightApprovalRequestEmail(reservation, context.prisma).catch(
+          (err) => console.error('Approval request email failed:', err),
+        );
+      }
+
+      return reservation;
     },
 
     updateReservation: async (_, { id, input }, context) => {
@@ -173,7 +212,7 @@ const reservationResolvers = {
         const overlapping = await context.prisma.reservation.findFirst({
           where: {
             vehicleId: existing.vehicleId,
-            status: 'CONFIRMED',
+            status: { in: ['CONFIRMED', 'PENDING_APPROVAL'] },
             id: { not: reservationId },
             startDate: { lt: newEndDate },
             endDate: { gt: newStartDate },
@@ -190,17 +229,119 @@ const reservationResolvers = {
 
       const userEmail = context.user.preferred_username;
 
-      return context.prisma.reservation.update({
+      // Determine whether the overnight flag is being toggled / details changed
+      const nextIsOvernight =
+        input.isOvernight !== undefined ? input.isOvernight === true : existing.isOvernight;
+      const nextOvernightDetails =
+        input.overnightDetails !== undefined
+          ? input.overnightDetails?.trim() || null
+          : existing.overnightDetails;
+
+      if (nextIsOvernight && !nextOvernightDetails) {
+        throw new GraphQLError(
+          'Overnight details are required when the driver will keep the vehicle overnight',
+          { extensions: { code: 'OVERNIGHT_DETAILS_REQUIRED' } }
+        );
+      }
+
+      // If edit flips the reservation into overnight, or is overnight and still pending and details changed,
+      // reset status back to PENDING_APPROVAL and clear any prior decision.
+      const becameOvernight = nextIsOvernight && !existing.isOvernight;
+      const shouldResetToPending =
+        becameOvernight ||
+        (nextIsOvernight &&
+          existing.status === 'REJECTED' &&
+          input.overnightDetails !== undefined);
+
+      const updateData = {
+        ...(input.startDate !== undefined && { startDate: newStartDate }),
+        ...(input.endDate !== undefined && { endDate: newEndDate }),
+        ...(input.purpose !== undefined && { purpose: input.purpose }),
+        ...(input.notes !== undefined && { notes: input.notes }),
+        ...(input.isOvernight !== undefined && { isOvernight: nextIsOvernight }),
+        ...(input.overnightDetails !== undefined && {
+          overnightDetails: nextOvernightDetails,
+        }),
+        updatedBy: userEmail,
+      };
+
+      if (shouldResetToPending) {
+        updateData.status = 'PENDING_APPROVAL';
+        updateData.approvedByUserId = null;
+        updateData.approvedByName = null;
+        updateData.approvedByEmail = null;
+        updateData.approvalDecisionAt = null;
+        updateData.approvalDecisionNotes = null;
+      }
+
+      const updated = await context.prisma.reservation.update({
+        where: { id: reservationId },
+        data: updateData,
+        include: { vehicle: true },
+      });
+
+      if (shouldResetToPending) {
+        sendOvernightApprovalRequestEmail(updated, context.prisma).catch(
+          (err) => console.error('Approval request email failed:', err),
+        );
+      }
+
+      return updated;
+    },
+
+    decideReservationApproval: async (_, { id, input }, context) => {
+      requireAuth(context);
+      const roles = context.user.roles || [];
+      if (!roles.includes('Approver') && !roles.includes('Admin')) {
+        throw new GraphQLError('Only approvers can decide overnight reservations', {
+          extensions: { code: 'FORBIDDEN' },
+        });
+      }
+
+      const reservationId = Number(id);
+      const existing = await context.prisma.reservation.findUnique({
+        where: { id: reservationId },
+        include: { vehicle: true },
+      });
+      if (!existing) throw new GraphQLError('Reservation not found');
+
+      if (existing.status !== 'PENDING_APPROVAL') {
+        throw new GraphQLError('This reservation has already been decided', {
+          extensions: { code: 'ALREADY_DECIDED' },
+        });
+      }
+
+      const decision = input.decision;
+      if (decision !== 'CONFIRMED' && decision !== 'REJECTED') {
+        throw new GraphQLError('Invalid decision; must be CONFIRMED or REJECTED', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      const approverId = context.user.oid || context.user.sub;
+      const approverName = context.user.name || context.user.preferred_username;
+      const approverEmail = context.user.preferred_username;
+      const decisionNotes = input.notes?.trim() || null;
+
+      const updated = await context.prisma.reservation.update({
         where: { id: reservationId },
         data: {
-          ...(input.startDate !== undefined && { startDate: newStartDate }),
-          ...(input.endDate !== undefined && { endDate: newEndDate }),
-          ...(input.purpose !== undefined && { purpose: input.purpose }),
-          ...(input.notes !== undefined && { notes: input.notes }),
-          updatedBy: userEmail,
+          status: decision,
+          approvedByUserId: approverId,
+          approvedByName: approverName,
+          approvedByEmail: approverEmail,
+          approvalDecisionAt: new Date(),
+          approvalDecisionNotes: decisionNotes,
+          updatedBy: approverEmail,
         },
         include: { vehicle: true },
       });
+
+      sendOvernightApprovalDecisionEmail(updated).catch((err) =>
+        console.error('Approval decision email failed:', err),
+      );
+
+      return updated;
     },
 
     cancelReservation: async (_, { id }, context) => {

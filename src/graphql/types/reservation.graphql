@@ -21,6 +21,13 @@ type Reservation {
   purpose: String
   notes: String
   status: String!
+  isOvernight: Boolean!
+  overnightDetails: String
+  approvedByUserId: String
+  approvedByName: String
+  approvedByEmail: String
+  approvalDecisionAt: DateTime
+  approvalDecisionNotes: String
   createdBy: String
   updatedBy: String
   createdAt: DateTime!
@@ -33,12 +40,21 @@ input CreateReservationInput {
   endDate: DateTime!
   purpose: String
   notes: String
+  isOvernight: Boolean
+  overnightDetails: String
 }
 
 input UpdateReservationInput {
   startDate: DateTime
   endDate: DateTime
   purpose: String
+  notes: String
+  isOvernight: Boolean
+  overnightDetails: String
+}
+
+input ApprovalDecisionInput {
+  decision: String!
   notes: String
 }
 

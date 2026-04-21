@@ -131,22 +131,29 @@ model AuditLog {
 }
 
 model Reservation {
-  id              Int       @id @default(autoincrement())
-  vehicleId       Int
-  vehicle         Vehicle   @relation(fields: [vehicleId], references: [id])
-  userId          String    @db.VarChar(255)
-  userName        String    @db.VarChar(255)
-  userEmail       String    @db.VarChar(255)
-  startDate       DateTime
-  endDate         DateTime
-  purpose         String?   @db.Text
-  notes           String?   @db.Text
-  status          String    @default("CONFIRMED") @db.VarChar(20) // CONFIRMED, CANCELLED
-  calendarEventId String?   @db.VarChar(255)
-  createdBy       String?   @db.VarChar(255)
-  updatedBy       String?   @db.VarChar(255)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                    Int       @id @default(autoincrement())
+  vehicleId             Int
+  vehicle               Vehicle   @relation(fields: [vehicleId], references: [id])
+  userId                String    @db.VarChar(255)
+  userName              String    @db.VarChar(255)
+  userEmail             String    @db.VarChar(255)
+  startDate             DateTime
+  endDate               DateTime
+  purpose               String?   @db.Text
+  notes                 String?   @db.Text
+  status                String    @default("CONFIRMED") @db.VarChar(20) // CONFIRMED, CANCELLED, PENDING_APPROVAL, REJECTED
+  calendarEventId       String?   @db.VarChar(255)
+  isOvernight           Boolean   @default(false)
+  overnightDetails      String?   @db.Text
+  approvedByUserId      String?   @db.VarChar(255)
+  approvedByName        String?   @db.VarChar(255)
+  approvedByEmail       String?   @db.VarChar(255)
+  approvalDecisionAt    DateTime?
+  approvalDecisionNotes String?   @db.Text
+  createdBy             String?   @db.VarChar(255)
+  updatedBy             String?   @db.VarChar(255)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@index([vehicleId])
   @@index([userId])
