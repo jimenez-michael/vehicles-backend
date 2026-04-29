@@ -68,6 +68,13 @@ model VehicleUsage {
   returnExteriorCleanliness String? @db.VarChar(20) // clean, acceptable, dirty
   incidentOccurred   Boolean?
   incidentDescription String? @db.Text
+  policeReportNumber     String?  @db.VarChar(100)
+  trustDriverName        String?  @db.VarChar(255)
+  thirdPartyName         String?  @db.VarChar(255)
+  thirdPartyAddress      String?  @db.VarChar(500)
+  thirdPartyPhone        String?  @db.VarChar(50)
+  thirdPartyVehicleModel String?  @db.VarChar(255)
+  thirdPartyVehicleYear  Int?
   newDamage          Boolean?
   newDamageDesc      String? @db.Text
   interiorConditionOk Boolean?
@@ -75,6 +82,8 @@ model VehicleUsage {
   properlyParked     Boolean?
   properlyParkedDesc String?  @db.Text
   returnObservations String?  @db.Text
+
+  attachments IncidentAttachment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -85,6 +94,30 @@ model VehicleUsage {
   @@index([pickupDate])
   @@index([userId, status])
   @@map("vehicle_usages")
+}
+
+// IncidentAttachmentCategory values (enforced at the GraphQL layer; SQL Server
+// connector doesn't support Prisma enums):
+//   ACCIDENT_FORM | TRUST_VEHICLE_LICENSE | THIRD_PARTY_LICENSE
+//   TRUST_VEHICLE_PHOTO | IMPACT_AREA_PHOTO | OTHER
+model IncidentAttachment {
+  id               Int          @id @default(autoincrement())
+  usageId          Int
+  vehicleUsage     VehicleUsage @relation(fields: [usageId], references: [id], onDelete: Cascade)
+  category         String       @db.VarChar(50)
+  blobName         String       @db.VarChar(1024)
+  containerName    String       @db.VarChar(255)
+  originalFileName String       @db.VarChar(500)
+  contentType      String       @db.VarChar(255)
+  sizeBytes        Int
+  uploadedById     String       @db.VarChar(255)
+  uploadedByName   String?      @db.VarChar(255)
+  uploadedByEmail  String?      @db.VarChar(255)
+  uploadedAt       DateTime     @default(now())
+
+  @@index([usageId])
+  @@index([usageId, category])
+  @@map("incident_attachments")
 }
 
 model AppUserRole {

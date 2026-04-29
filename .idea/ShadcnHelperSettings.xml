@@ -2118,6 +2118,90 @@
         <option name="homepage" value="https://aicanvas.me" />
         <option name="urlTemplate" value="https://aicanvas.me/r/{name}.json" />
       </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-loading-ui" />
+        <option name="name" value="Loading-ui" />
+        <option name="namespace" value="@loading-ui" />
+        <option name="baseUrl" value="https://loading-ui.com/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Spinners, loaders, and loading animations for modern web apps. Free and open-source." />
+        <option name="homepage" value="https://loading-ui.com" />
+        <option name="urlTemplate" value="https://loading-ui.com/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-xcn" />
+        <option name="name" value="Xcn" />
+        <option name="namespace" value="@xcn" />
+        <option name="baseUrl" value="https://ui.radiumcoders.com/r/xcn" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Hand-crafted, beautiful, and minimal UI components built with Tailwind CSS and Motion." />
+        <option name="homepage" value="http://ui.radiumcoders.com" />
+        <option name="urlTemplate" value="https://ui.radiumcoders.com/r/xcn/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-evilcharts" />
+        <option name="name" value="Evilcharts" />
+        <option name="namespace" value="@evilcharts" />
+        <option name="baseUrl" value="https://evilcharts.com/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="EvilCharts is an open-source chart UI website built with shadcn and Recharts, beautifully designed and handcrafted." />
+        <option name="homepage" value="https://evilcharts.com" />
+        <option name="urlTemplate" value="https://evilcharts.com/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-glasscn" />
+        <option name="name" value="Glasscn" />
+        <option name="namespace" value="@glasscn" />
+        <option name="baseUrl" value="https://glasscn-components.vercel.app/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="A shadcn-compatible registry of glassmorphism components inspired by Apple" />
+        <option name="homepage" value="https://glasscn.vercel.app/" />
+        <option name="urlTemplate" value="https://glasscn-components.vercel.app/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-dotmatrix" />
+        <option name="name" value="Dotmatrix" />
+        <option name="namespace" value="@dotmatrix" />
+        <option name="baseUrl" value="https://dotmatrix.zzzzshawn.cloud/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Production-ready dot-matrix loading components for React, featuring square, circular, and triangle animations with polished motion." />
+        <option name="homepage" value="https://dotmatrix.zzzzshawn.cloud" />
+        <option name="urlTemplate" value="https://dotmatrix.zzzzshawn.cloud/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-devl" />
+        <option name="name" value="Devl" />
+        <option name="namespace" value="@devl" />
+        <option name="baseUrl" value="https://devl.dev/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Hand-crafted layouts and UI primitives for shipping fast." />
+        <option name="homepage" value="https://devl.dev" />
+        <option name="urlTemplate" value="https://devl.dev/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-shieldcn" />
+        <option name="name" value="Shieldcn" />
+        <option name="namespace" value="@shieldcn" />
+        <option name="baseUrl" value="https://shieldcn.dev/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Beautiful README badges as a service. A shields.io alternative with the visual quality of shadcn/ui. Drop-in SVG badge components for npm, GitHub, Discord, and more." />
+        <option name="homepage" value="https://shieldcn.dev" />
+        <option name="urlTemplate" value="https://shieldcn.dev/r/{name}.json" />
+      </RegistryConfigState>
     </registryConfigs>
   </component>
 </project>

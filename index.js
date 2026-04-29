@@ -1,7 +1,8 @@
+require('dotenv').config();
+
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const express = require('express');
 const {
   ApolloServerPluginLandingPageLocalDefault,
@@ -13,7 +14,6 @@ const executableSchema = require('./src/graphql/index');
 const prisma = require('./src/config/prisma');
 const { createAuthMiddleware } = require('./src/config/auth');
 
-dotenv.config();
 dayjs.extend(localizedFormat);
 
 console.log('🔥 Booting Vehicles Backend...');

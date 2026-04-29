@@ -1,7 +1,22 @@
 const dayjs = require('dayjs');
+const { GraphQLError } = require('graphql');
 const { requireAuth } = require('../../middleware/requireAuth');
 const { sendIncidentEmail } = require('../../utils/sendIncidentEmail');
 const { sendForceCloseEmail } = require('../../utils/sendForceCloseEmail');
+const {
+  generateAttachmentUploadSas,
+  generateAttachmentReadSas,
+} = require('../../services/azure-blob');
+
+function ensureOwnerOrAdmin(context, ownerUserId) {
+  const userId = context.user.oid || context.user.sub;
+  const roles = context.user.roles || [];
+  if (ownerUserId !== userId && !roles.includes('Admin')) {
+    throw new GraphQLError('You do not have access to this record', {
+      extensions: { code: 'FORBIDDEN', http: { status: 403 } },
+    });
+  }
+}
 
 const usageResolvers = {
   Query: {
@@ -148,6 +163,17 @@ const usageResolvers = {
           : 0;
 
       return { totalTrips, totalMileage, daysWithoutIncident, lastIncidentDate };
+    },
+
+    incidentReport: async (_, args, context) => {
+      requireAuth(context);
+      const usage = await context.prisma.vehicleUsage.findUnique({
+        where: { id: Number(args.usageId) },
+        include: { vehicle: true, attachments: true },
+      });
+      if (!usage) return null;
+      ensureOwnerOrAdmin(context, usage.userId);
+      return usage;
     },
 
     fleetStats: async (_, __, context) => {
@@ -542,6 +568,148 @@ const usageResolvers = {
 
       return usage;
     },
+
+    updateIncidentReport: async (_, { usageId, input }, context) => {
+      requireAuth(context);
+      const id = Number(usageId);
+
+      const existing = await context.prisma.vehicleUsage.findUnique({
+        where: { id },
+      });
+      if (!existing) throw new GraphQLError('Usage record not found');
+      ensureOwnerOrAdmin(context, existing.userId);
+
+      const updated = await context.prisma.vehicleUsage.update({
+        where: { id },
+        data: {
+          ...(input.incidentOccurred !== undefined && { incidentOccurred: input.incidentOccurred }),
+          ...(input.incidentDescription !== undefined && { incidentDescription: input.incidentDescription }),
+          ...(input.policeReportNumber !== undefined && { policeReportNumber: input.policeReportNumber }),
+          ...(input.trustDriverName !== undefined && { trustDriverName: input.trustDriverName }),
+          ...(input.thirdPartyName !== undefined && { thirdPartyName: input.thirdPartyName }),
+          ...(input.thirdPartyAddress !== undefined && { thirdPartyAddress: input.thirdPartyAddress }),
+          ...(input.thirdPartyPhone !== undefined && { thirdPartyPhone: input.thirdPartyPhone }),
+          ...(input.thirdPartyVehicleModel !== undefined && { thirdPartyVehicleModel: input.thirdPartyVehicleModel }),
+          ...(input.thirdPartyVehicleYear !== undefined && { thirdPartyVehicleYear: input.thirdPartyVehicleYear }),
+          ...(input.newDamage !== undefined && { newDamage: input.newDamage }),
+          ...(input.newDamageDesc !== undefined && { newDamageDesc: input.newDamageDesc }),
+        },
+        include: { vehicle: true, attachments: true },
+      });
+
+      return updated;
+    },
+
+    requestIncidentAttachmentUpload: async (
+      _,
+      { usageId, category, originalFileName, contentType, sizeBytes },
+      context,
+    ) => {
+      requireAuth(context);
+      const id = Number(usageId);
+
+      const existing = await context.prisma.vehicleUsage.findUnique({
+        where: { id },
+      });
+      if (!existing) throw new GraphQLError('Usage record not found');
+      ensureOwnerOrAdmin(context, existing.userId);
+
+      const ticket = await generateAttachmentUploadSas({
+        usageId: id,
+        category,
+        originalFileName,
+        contentType,
+        sizeBytes,
+      });
+
+      return {
+        uploadUrl: ticket.uploadUrl,
+        blobName: ticket.blobName,
+        containerName: ticket.containerName,
+        attachmentId: null, // DB row is created in the confirm step
+        expiresAt: ticket.expiresAt,
+      };
+    },
+
+    confirmIncidentAttachmentUpload: async (
+      _,
+      { usageId, blobName, containerName, category, originalFileName, contentType, sizeBytes },
+      context,
+    ) => {
+      requireAuth(context);
+      const id = Number(usageId);
+
+      const existing = await context.prisma.vehicleUsage.findUnique({
+        where: { id },
+      });
+      if (!existing) throw new GraphQLError('Usage record not found');
+      ensureOwnerOrAdmin(context, existing.userId);
+
+      const uploaderId = context.user.oid || context.user.sub;
+      const uploaderName = context.user.name || context.user.preferred_username || null;
+      const uploaderEmail = context.user.preferred_username || null;
+
+      const attachment = await context.prisma.incidentAttachment.create({
+        data: {
+          usageId: id,
+          category,
+          blobName,
+          containerName,
+          originalFileName,
+          contentType,
+          sizeBytes,
+          uploadedById: uploaderId,
+          uploadedByName: uploaderName,
+          uploadedByEmail: uploaderEmail,
+        },
+      });
+
+      return attachment;
+    },
+
+    deleteIncidentAttachment: async (_, { id }, context) => {
+      requireAuth(context);
+      const attachmentId = Number(id);
+
+      const existing = await context.prisma.incidentAttachment.findUnique({
+        where: { id: attachmentId },
+      });
+      if (!existing) throw new GraphQLError('Attachment not found');
+
+      const userId = context.user.oid || context.user.sub;
+      const roles = context.user.roles || [];
+      if (existing.uploadedById !== userId && !roles.includes('Admin')) {
+        throw new GraphQLError('You can only delete attachments you uploaded', {
+          extensions: { code: 'FORBIDDEN', http: { status: 403 } },
+        });
+      }
+
+      // TODO: also delete the underlying blob from Azure storage.
+      await context.prisma.incidentAttachment.delete({
+        where: { id: attachmentId },
+      });
+
+      return true;
+    },
+  },
+
+  VehicleUsage: {
+    attachments: (parent, _, context) => {
+      // If already included by a parent resolver, reuse it.
+      if (Array.isArray(parent.attachments)) return parent.attachments;
+      return context.prisma.incidentAttachment.findMany({
+        where: { usageId: parent.id },
+        orderBy: { uploadedAt: 'asc' },
+      });
+    },
+  },
+
+  IncidentAttachment: {
+    downloadUrl: (parent) =>
+      generateAttachmentReadSas({
+        blobName: parent.blobName,
+        containerName: parent.containerName,
+      }),
   },
 };
 

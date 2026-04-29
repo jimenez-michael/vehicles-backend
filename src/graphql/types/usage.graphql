@@ -33,6 +33,13 @@ type VehicleUsage {
   returnExteriorCleanliness: String
   incidentOccurred: Boolean
   incidentDescription: String
+  policeReportNumber: String
+  trustDriverName: String
+  thirdPartyName: String
+  thirdPartyAddress: String
+  thirdPartyPhone: String
+  thirdPartyVehicleModel: String
+  thirdPartyVehicleYear: Int
   newDamage: Boolean
   newDamageDesc: String
   interiorConditionOk: Boolean
@@ -40,9 +47,42 @@ type VehicleUsage {
   properlyParked: Boolean
   properlyParkedDesc: String
   returnObservations: String
+  # Attachments
+  attachments: [IncidentAttachment!]!
   # Timestamps
   createdAt: DateTime
   updatedAt: DateTime
+}
+
+enum IncidentAttachmentCategory {
+  ACCIDENT_FORM
+  TRUST_VEHICLE_LICENSE
+  THIRD_PARTY_LICENSE
+  TRUST_VEHICLE_PHOTO
+  IMPACT_AREA_PHOTO
+  OTHER
+}
+
+type IncidentAttachment {
+  id: ID!
+  usageId: Int!
+  category: IncidentAttachmentCategory!
+  originalFileName: String!
+  contentType: String!
+  sizeBytes: Int!
+  uploadedById: String!
+  uploadedByName: String
+  uploadedByEmail: String
+  uploadedAt: DateTime!
+  downloadUrl: String!
+}
+
+type AttachmentUploadTicket {
+  uploadUrl: String!
+  blobName: String!
+  containerName: String!
+  attachmentId: ID
+  expiresAt: DateTime!
 }
 
 type UsageStats {
@@ -163,6 +203,7 @@ extend type Query {
   usageByVehicle(vehicleId: ID!): [VehicleUsage]!
   usageStats: UsageStats!
   fleetStats: FleetStats!
+  incidentReport(usageId: ID!): VehicleUsage
 }
 
 input UpdateUsageRecordInput {
@@ -188,10 +229,42 @@ input UpdateUsageRecordInput {
   pickupObservations: String
 }
 
+input UpdateIncidentReportInput {
+  incidentOccurred: Boolean
+  incidentDescription: String
+  policeReportNumber: String
+  trustDriverName: String
+  thirdPartyName: String
+  thirdPartyAddress: String
+  thirdPartyPhone: String
+  thirdPartyVehicleModel: String
+  thirdPartyVehicleYear: Int
+  newDamage: Boolean
+  newDamageDesc: String
+}
+
 extend type Mutation {
   createPickup(input: CreatePickupInput!): VehicleUsage!
   completeReturn(id: ID!, input: CompleteReturnInput!): VehicleUsage!
   forceCloseUsage(id: ID!): VehicleUsage!
   updateUsageRecord(id: ID!, input: UpdateUsageRecordInput!): VehicleUsage!
   deleteUsageRecord(id: ID!): VehicleUsage!
+  updateIncidentReport(usageId: ID!, input: UpdateIncidentReportInput!): VehicleUsage!
+  requestIncidentAttachmentUpload(
+    usageId: ID!
+    category: IncidentAttachmentCategory!
+    originalFileName: String!
+    contentType: String!
+    sizeBytes: Int!
+  ): AttachmentUploadTicket!
+  confirmIncidentAttachmentUpload(
+    usageId: ID!
+    blobName: String!
+    containerName: String!
+    category: IncidentAttachmentCategory!
+    originalFileName: String!
+    contentType: String!
+    sizeBytes: Int!
+  ): IncidentAttachment!
+  deleteIncidentAttachment(id: ID!): Boolean!
 }
