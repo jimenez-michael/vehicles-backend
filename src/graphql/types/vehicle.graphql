@@ -46,6 +46,12 @@ type VehicleLicenseUploadTicket {
   expiresAt: DateTime!
 }
 
+type VehicleLicenseOcrResult {
+  ocrLicensePlate: String
+  ocrYear: Int
+  ocrExpiresOn: DateTime
+}
+
 input CreateVehicleInput {
   vehicleNumber: String!
   make: String!
@@ -118,8 +124,16 @@ extend type Mutation {
     year: Int!
     effectiveFrom: DateTime
     effectiveTo: DateTime
+    ocrLicensePlate: String
+    ocrYear: Int
+    ocrExpiresOn: DateTime
     notes: String
   ): VehicleLicense!
+  runVehicleLicenseOcr(
+    blobName: String!
+    containerName: String!
+    contentType: String!
+  ): VehicleLicenseOcrResult!
   updateVehicleLicense(
     id: ID!
     year: Int

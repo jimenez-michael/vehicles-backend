@@ -208,6 +208,9 @@ const vehicleResolvers = {
         year,
         effectiveFrom,
         effectiveTo,
+        ocrLicensePlate,
+        ocrYear,
+        ocrExpiresOn,
         notes,
       },
       context,
@@ -223,7 +226,9 @@ const vehicleResolvers = {
       const uploaderName = context.user.name || context.user.preferred_username || null;
       const uploaderEmail = context.user.preferred_username || null;
 
-      let license = await context.prisma.vehicleLicense.create({
+      const hasOcr = ocrLicensePlate != null || ocrYear != null || ocrExpiresOn != null;
+
+      return context.prisma.vehicleLicense.create({
         data: {
           vehicleId: vid,
           year,
@@ -237,32 +242,24 @@ const vehicleResolvers = {
           uploadedById: uploaderId,
           uploadedByName: uploaderName,
           uploadedByEmail: uploaderEmail,
+          ocrLicensePlate: ocrLicensePlate || null,
+          ocrYear: ocrYear || null,
+          ocrExpiresOn: ocrExpiresOn || null,
+          ocrExtractedAt: hasOcr ? new Date() : null,
           notes: notes || null,
         },
       });
+    },
 
-      // Run OCR synchronously for v1 simplicity; if it fails we keep the row
-      // and surface a log so the admin can retry via updateVehicleLicense.
-      if (extractVehicleLicense) {
-        try {
-          const ocr = await extractVehicleLicense({ blobName, containerName });
-          if (ocr) {
-            license = await context.prisma.vehicleLicense.update({
-              where: { id: license.id },
-              data: {
-                ocrLicensePlate: ocr.ocrLicensePlate ?? null,
-                ocrYear: ocr.ocrYear ?? null,
-                ocrExpiresOn: ocr.ocrExpiresOn ?? null,
-                ocrExtractedAt: new Date(),
-              },
-            });
-          }
-        } catch (err) {
-          console.error('[confirmVehicleLicenseUpload] OCR failed:', err.message || err);
-        }
-      }
-
-      return license;
+    runVehicleLicenseOcr: async (_, { blobName, containerName, contentType }, context) => {
+      ensureAdmin(context);
+      if (!extractVehicleLicense) throw new GraphQLError('OCR service not available');
+      const ocr = await extractVehicleLicense({ blobName, containerName, contentType });
+      return {
+        ocrLicensePlate: ocr.ocrLicensePlate ?? null,
+        ocrYear: ocr.ocrYear ?? null,
+        ocrExpiresOn: ocr.ocrExpiresOn ?? null,
+      };
     },
 
     updateVehicleLicense: async (_, args, context) => {
