@@ -1,17 +1,24 @@
 const { PrismaClient } = require('@prisma/client');
 
-// On Azure App Service the default pool (num_cpus*2+1) can be as low as 3,
-// which causes "Timed out fetching a new connection" under modest concurrency.
-// Append explicit pool params so the limit and wait-timeout are predictable
-// regardless of how many CPUs the host reports.
-// SQL Server connection strings use semicolon-delimited params, not ?key=value.
+// Keep the pool small — a fleet management app sees low concurrency and
+// SQL Server has a finite connection limit. 5 is plenty; bump via env if needed.
+const connectionLimit = parseInt(process.env.DATABASE_POOL_SIZE ?? '5', 10);
 const baseUrl = (process.env.DATABASE_URL ?? '').replace(/;$/, '');
-const datasourceUrl = `${baseUrl};connection_limit=20;pool_timeout=30`;
+const datasourceUrl = `${baseUrl};connection_limit=${connectionLimit};pool_timeout=30`;
 
 const prisma = new PrismaClient({ datasourceUrl });
 
-process.on('beforeExit', async () => {
+// Graceful shutdown — covers normal exit, Ctrl-C, and nodemon restarts.
+// nodemon sends SIGUSR2; production containers send SIGTERM.
+// Without these, the pool connections stay open on SQL Server across restarts,
+// eventually exhausting the server-side connection limit.
+async function disconnect() {
   await prisma.$disconnect();
-});
+}
+
+process.once('beforeExit', disconnect);
+process.once('SIGINT', () => disconnect().then(() => process.exit(0)));
+process.once('SIGTERM', () => disconnect().then(() => process.exit(0)));
+process.once('SIGUSR2', () => disconnect().then(() => process.kill(process.pid, 'SIGUSR2')));
 
 module.exports = prisma;

@@ -143,11 +143,11 @@ function intOrUndefined(v) {
 async function callClaudeVision({ buffer, mediaType, systemPrompt, userText }) {
   const base64 = buffer.toString('base64');
 
-  const sourceType = mediaType === 'application/pdf' ? 'base64' : 'base64';
-  // Anthropic SDK >= 0.30 accepts media_type 'application/pdf' on the same
-  // image content block (document support via vision). If a future SDK
-  // splits PDFs into a 'document' block, we can branch here.
-  // TODO: if we ever exceed PDF size limits, switch to the Files API.
+  // PDFs use the 'document' content block; images use the 'image' block.
+  const fileBlock =
+    mediaType === 'application/pdf'
+      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } }
+      : { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } };
 
   let resp;
   try {
@@ -159,17 +159,7 @@ async function callClaudeVision({ buffer, mediaType, systemPrompt, userText }) {
       messages: [
         {
           role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: sourceType,
-                media_type: mediaType,
-                data: base64,
-              },
-            },
-            { type: 'text', text: userText },
-          ],
+          content: [fileBlock, { type: 'text', text: userText }],
         },
       ],
     });
