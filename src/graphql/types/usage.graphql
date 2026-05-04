@@ -49,6 +49,8 @@ type VehicleUsage {
   returnObservations: String
   # Attachments
   attachments: [IncidentAttachment!]!
+  # Driver's license on file for the user that owns this record
+  driverLicense: UserDriverLicense
   # Timestamps
   createdAt: DateTime
   updatedAt: DateTime

@@ -50,8 +50,8 @@ const appRoleResolvers = {
       const where = search
         ? {
             OR: [
-              { displayName: { contains: search, mode: 'insensitive' } },
-              { email: { contains: search, mode: 'insensitive' } },
+              { displayName: { contains: search } },
+              { email: { contains: search } },
             ],
           }
         : {};

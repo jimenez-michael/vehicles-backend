@@ -14,6 +14,36 @@ type Vehicle {
   updatedBy: String
   createdAt: DateTime
   updatedAt: DateTime
+  hasHistory: Boolean!
+  licenses: [VehicleLicense!]!
+  latestLicense: VehicleLicense
+}
+
+type VehicleLicense {
+  id: ID!
+  vehicleId: Int!
+  year: Int!
+  effectiveFrom: DateTime
+  effectiveTo: DateTime
+  originalFileName: String!
+  contentType: String!
+  sizeBytes: Int!
+  uploadedAt: DateTime!
+  uploadedByName: String
+  uploadedByEmail: String
+  ocrLicensePlate: String
+  ocrYear: Int
+  ocrExpiresOn: DateTime
+  ocrExtractedAt: DateTime
+  notes: String
+  downloadUrl: String!
+}
+
+type VehicleLicenseUploadTicket {
+  uploadUrl: String!
+  blobName: String!
+  containerName: String!
+  expiresAt: DateTime!
 }
 
 input CreateVehicleInput {
@@ -46,6 +76,7 @@ input VehiclesPageInput {
   pageSize: Int = 25
   search: String
   status: String
+  excludeStatus: String
   sortBy: String = "vehicleNumber"
   sortDir: String = "asc"
 }
@@ -69,4 +100,35 @@ extend type Mutation {
   createVehicle(input: CreateVehicleInput!): Vehicle!
   updateVehicle(id: ID!, input: UpdateVehicleInput!): Vehicle!
   deleteVehicle(id: ID!): Vehicle!
+
+  # Vehicle license (registration / marbete) management — admin only
+  requestVehicleLicenseUpload(
+    vehicleId: ID!
+    originalFileName: String!
+    contentType: String!
+    sizeBytes: Int!
+  ): VehicleLicenseUploadTicket!
+  confirmVehicleLicenseUpload(
+    vehicleId: ID!
+    blobName: String!
+    containerName: String!
+    originalFileName: String!
+    contentType: String!
+    sizeBytes: Int!
+    year: Int!
+    effectiveFrom: DateTime
+    effectiveTo: DateTime
+    notes: String
+  ): VehicleLicense!
+  updateVehicleLicense(
+    id: ID!
+    year: Int
+    effectiveFrom: DateTime
+    effectiveTo: DateTime
+    ocrLicensePlate: String
+    ocrYear: Int
+    ocrExpiresOn: DateTime
+    notes: String
+  ): VehicleLicense!
+  deleteVehicleLicense(id: ID!): Boolean!
 }

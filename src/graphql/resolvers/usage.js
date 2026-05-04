@@ -72,10 +72,10 @@ const usageResolvers = {
       if (search) {
         and.push({
           OR: [
-            { userName: { contains: search, mode: 'insensitive' } },
-            { userEmail: { contains: search, mode: 'insensitive' } },
-            { vehicle: { vehicleNumber: { contains: search, mode: 'insensitive' } } },
-            { vehicle: { licensePlate: { contains: search, mode: 'insensitive' } } },
+            { userName: { contains: search } },
+            { userEmail: { contains: search } },
+            { vehicle: { vehicleNumber: { contains: search } } },
+            { vehicle: { licensePlate: { contains: search } } },
           ],
         });
       }
@@ -700,6 +700,12 @@ const usageResolvers = {
       return context.prisma.incidentAttachment.findMany({
         where: { usageId: parent.id },
         orderBy: { uploadedAt: 'asc' },
+      });
+    },
+    driverLicense: (parent, _, context) => {
+      if (!parent.userId) return null;
+      return context.prisma.userDriverLicense.findUnique({
+        where: { principalId: parent.userId },
       });
     },
   },

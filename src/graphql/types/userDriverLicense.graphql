@@ -1,0 +1,61 @@
+type UserDriverLicense {
+  principalId: String!
+  email: String!
+  displayName: String
+  originalFileName: String!
+  contentType: String!
+  sizeBytes: Int!
+  uploadedAt: DateTime!
+  uploadedByName: String
+  licenseNumber: String
+  fullNameOnLicense: String
+  dateOfBirth: DateTime
+  expiresOn: DateTime
+  licenseClass: String
+  address: String
+  ocrExtractedAt: DateTime
+  downloadUrl: String!
+}
+
+type DriverLicenseUploadTicket {
+  uploadUrl: String!
+  blobName: String!
+  containerName: String!
+  expiresAt: DateTime!
+}
+
+extend type Query {
+  userDriverLicense(principalId: String!): UserDriverLicense
+}
+
+extend type Mutation {
+  requestDriverLicenseUpload(
+    principalId: String!
+    email: String!
+    displayName: String
+    originalFileName: String!
+    contentType: String!
+    sizeBytes: Int!
+  ): DriverLicenseUploadTicket!
+  confirmDriverLicenseUpload(
+    principalId: String!
+    email: String!
+    displayName: String
+    blobName: String!
+    containerName: String!
+    originalFileName: String!
+    contentType: String!
+    sizeBytes: Int!
+  ): UserDriverLicense!
+  updateUserDriverLicense(
+    principalId: String!
+    licenseNumber: String
+    fullNameOnLicense: String
+    dateOfBirth: DateTime
+    expiresOn: DateTime
+    licenseClass: String
+    address: String
+  ): UserDriverLicense!
+  deleteUserDriverLicense(principalId: String!): Boolean!
+  extractDriverLicenseFields(principalId: String!): UserDriverLicense!
+}

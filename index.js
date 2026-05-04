@@ -13,6 +13,7 @@ const localizedFormat = require('dayjs/plugin/localizedFormat');
 const executableSchema = require('./src/graphql/index');
 const prisma = require('./src/config/prisma');
 const { createAuthMiddleware } = require('./src/config/auth');
+const { registerCaseFilesRoute } = require('./src/routes/caseFiles');
 
 dayjs.extend(localizedFormat);
 
@@ -82,6 +83,9 @@ const bootstrapServer = async () => {
     app.get('/', (req, res) => {
       res.status(200).send('Vehicles Backend API Running');
     });
+
+    // REST: zip-bundle of all incident case files for one VehicleUsage record.
+    registerCaseFilesRoute(app, { prisma });
 
     // GraphQL with Prisma and user context
     app.use(

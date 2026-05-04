@@ -212,8 +212,32 @@ async function deleteAttachmentBlob({ blobName, containerName }) {
   return Boolean(result.succeeded);
 }
 
+/**
+ * Download a blob's raw bytes as a Buffer. Used by server-side processors
+ * (e.g. Claude Vision OCR) that need the file contents directly rather than
+ * a SAS URL.
+ *
+ * @param {object} args
+ * @param {string} args.blobName
+ * @param {string} [args.containerName]    defaults to AZURE_STORAGE_INCIDENT_CONTAINER
+ * @returns {Promise<Buffer>}
+ */
+async function getBlobBytes({ blobName, containerName }) {
+  if (!blobName) {
+    throw new Error('[azure-blob] blobName is required');
+  }
+  const container = containerName || DEFAULT_CONTAINER;
+  const containerClient = blobServiceClient.getContainerClient(container);
+  const blobClient = containerClient.getBlobClient(blobName);
+  // downloadToBuffer pulls the entire blob into memory. Fine for license
+  // photos / single-page PDFs; do NOT use this for arbitrarily large files.
+  const buffer = await blobClient.downloadToBuffer();
+  return buffer;
+}
+
 module.exports = {
   generateAttachmentUploadSas,
   generateAttachmentReadSas,
   deleteAttachmentBlob,
+  getBlobBytes,
 };

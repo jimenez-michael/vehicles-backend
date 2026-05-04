@@ -16,10 +16,10 @@ const auditLogResolvers = {
       if (search) {
         and.push({
           OR: [
-            { actorName: { contains: search, mode: 'insensitive' } },
-            { actorEmail: { contains: search, mode: 'insensitive' } },
-            { targetId: { contains: search, mode: 'insensitive' } },
-            { metadata: { contains: search, mode: 'insensitive' } },
+            { actorName: { contains: search } },
+            { actorEmail: { contains: search } },
+            { targetId: { contains: search } },
+            { metadata: { contains: search } },
           ],
         });
       }

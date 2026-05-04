@@ -54,12 +54,12 @@ const reservationResolvers = {
       if (search) {
         and.push({
           OR: [
-            { userName: { contains: search, mode: 'insensitive' } },
-            { userEmail: { contains: search, mode: 'insensitive' } },
-            { vehicle: { vehicleNumber: { contains: search, mode: 'insensitive' } } },
-            { vehicle: { licensePlate: { contains: search, mode: 'insensitive' } } },
-            { vehicle: { make: { contains: search, mode: 'insensitive' } } },
-            { vehicle: { model: { contains: search, mode: 'insensitive' } } },
+            { userName: { contains: search } },
+            { userEmail: { contains: search } },
+            { vehicle: { vehicleNumber: { contains: search } } },
+            { vehicle: { licensePlate: { contains: search } } },
+            { vehicle: { make: { contains: search } } },
+            { vehicle: { model: { contains: search } } },
           ],
         });
       }

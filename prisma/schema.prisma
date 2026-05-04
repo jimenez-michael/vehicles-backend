@@ -27,6 +27,7 @@ model Vehicle {
   updatedAt      DateTime       @updatedAt
   usages         VehicleUsage[]
   reservations   Reservation[]
+  licenses       VehicleLicense[]
 
   @@map("vehicles")
 }
@@ -194,4 +195,61 @@ model Reservation {
   @@index([startDate])
   @@index([vehicleId, status, startDate, endDate])
   @@map("reservations")
+}
+
+model VehicleLicense {
+  id               Int       @id @default(autoincrement())
+  vehicleId        Int
+  vehicle          Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  year             Int
+  effectiveFrom    DateTime?
+  effectiveTo      DateTime?
+  // Blob attachment
+  blobName         String    @db.VarChar(1024)
+  containerName    String    @db.VarChar(255)
+  originalFileName String    @db.VarChar(500)
+  contentType      String    @db.VarChar(255)
+  sizeBytes        Int
+  uploadedById     String    @db.VarChar(255)
+  uploadedByName   String?   @db.VarChar(255)
+  uploadedByEmail  String?   @db.VarChar(255)
+  uploadedAt       DateTime  @default(now())
+  // OCR-extracted (auto-filled by Claude vision; admin can edit)
+  ocrLicensePlate  String?   @db.VarChar(50)
+  ocrYear          Int?
+  ocrExpiresOn     DateTime?
+  ocrExtractedAt   DateTime?
+  notes            String?   @db.NVarChar(500)
+
+  @@index([vehicleId, year])
+  @@index([vehicleId, effectiveTo])
+  @@map("vehicle_licenses")
+}
+
+model UserDriverLicense {
+  principalId       String    @id @db.VarChar(255) // Azure AD oid as PK
+  email             String    @db.VarChar(255)
+  displayName       String?   @db.VarChar(255)
+  // Blob attachment
+  blobName          String    @db.VarChar(1024)
+  containerName     String    @db.VarChar(255)
+  originalFileName  String    @db.VarChar(500)
+  contentType       String    @db.VarChar(255)
+  sizeBytes         Int
+  uploadedById      String    @db.VarChar(255)
+  uploadedByName    String?   @db.VarChar(255)
+  uploadedByEmail   String?   @db.VarChar(255)
+  uploadedAt        DateTime  @default(now())
+  // OCR-extracted fields
+  licenseNumber     String?   @db.VarChar(100)
+  fullNameOnLicense String?   @db.VarChar(255)
+  dateOfBirth       DateTime?
+  expiresOn         DateTime?
+  licenseClass      String?   @db.VarChar(50)
+  address           String?   @db.VarChar(500)
+  ocrExtractedAt    DateTime?
+
+  @@index([email])
+  @@index([expiresOn])
+  @@map("user_driver_licenses")
 }
