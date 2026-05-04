@@ -1,8 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 
-// Keep the pool small — a fleet management app sees low concurrency and
-// SQL Server has a finite connection limit. 5 is plenty; bump via env if needed.
-const connectionLimit = parseInt(process.env.DATABASE_POOL_SIZE ?? '5', 10);
+const connectionLimit = parseInt(process.env.DATABASE_POOL_SIZE ?? '20', 10);
 const baseUrl = (process.env.DATABASE_URL ?? '').replace(/;$/, '');
 const datasourceUrl = `${baseUrl};connection_limit=${connectionLimit};pool_timeout=30`;
 
