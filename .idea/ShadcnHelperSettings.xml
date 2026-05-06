@@ -2202,6 +2202,78 @@
         <option name="homepage" value="https://shieldcn.dev" />
         <option name="urlTemplate" value="https://shieldcn.dev/r/{name}.json" />
       </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-cognicatch" />
+        <option name="name" value="Cognicatch" />
+        <option name="namespace" value="@cognicatch" />
+        <option name="baseUrl" value="https://cognicatch.dev/registry" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Adaptive Error Boundaries and graceful fallback UIs (Banners, Modals, Toasts)." />
+        <option name="homepage" value="https://cognicatch.dev" />
+        <option name="urlTemplate" value="https://cognicatch.dev/registry/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-indiacn" />
+        <option name="name" value="Indiacn" />
+        <option name="namespace" value="@indiacn" />
+        <option name="baseUrl" value="https://indiacn.in/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="UX4G 2.0 design system for India — many accessible React components and an 8-color theme preset for native apps." />
+        <option name="homepage" value="https://indiacn.in" />
+        <option name="urlTemplate" value="https://indiacn.in/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-nordaun" />
+        <option name="name" value="Nordaun" />
+        <option name="namespace" value="@nordaun" />
+        <option name="baseUrl" value="https://ui.nordaun.com/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="Simple components for your extraordinary creations." />
+        <option name="homepage" value="https://ui.nordaun.com" />
+        <option name="urlTemplate" value="https://ui.nordaun.com/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-delta" />
+        <option name="name" value="Delta" />
+        <option name="namespace" value="@delta" />
+        <option name="baseUrl" value="https://deltacomponents.dev/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="A shadcn registry for AI and media-rich interfaces — streaming LLM chat, zoomable images, swipeable card decks, interactive maps, plus dashboard and landing-page blocks." />
+        <option name="homepage" value="https://deltacomponents.dev" />
+        <option name="urlTemplate" value="https://deltacomponents.dev/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-evilbuttons" />
+        <option name="name" value="Evilbuttons" />
+        <option name="namespace" value="@evilbuttons" />
+        <option name="baseUrl" value="https://evilbuttons.radiumcoders.com/r" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="A shadcn/ui registry featuring a collection of animated buttons built with Motion. Each component is designed to add punchy, interactive feedback to your UI with minimal setup." />
+        <option name="homepage" value="https://evilbuttons.radiumcoders.com/docs" />
+        <option name="urlTemplate" value="https://evilbuttons.radiumcoders.com/r/{name}.json" />
+      </RegistryConfigState>
+      <RegistryConfigState>
+        <option name="id" value="central-stepper" />
+        <option name="name" value="Stepper" />
+        <option name="namespace" value="@stepper" />
+        <option name="baseUrl" value="https://francozeta-stepper.vercel.app" />
+        <option name="stylePath" value="/{name}.json" />
+        <option name="type" value="community" />
+        <option name="enabled" value="false" />
+        <option name="description" value="A modern, accessible and composable Stepper component for React and Tailwind CSS. Built for shadcn/ui-style workflows with registry-first distribution." />
+        <option name="homepage" value="https://francozeta-stepper.vercel.app" />
+        <option name="urlTemplate" value="https://francozeta-stepper.vercel.app/{name}.json" />
+      </RegistryConfigState>
     </registryConfigs>
   </component>
 </project>

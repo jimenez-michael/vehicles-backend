@@ -39,6 +39,8 @@ async function sendIncidentEmail(usage, vehicle) {
     : 'Unknown Vehicle';
 
   const date = dayjs(usage.returnDate).format('MMM D, YYYY — h:mm A');
+  const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+  const incidentUrl = `${frontendUrl}/admin/incidents/${usage.id}`;
 
   const message = {
     subject: `⚠️ Vehicle Incident Report — ${vehicleLabel}`,
@@ -56,6 +58,9 @@ async function sendIncidentEmail(usage, vehicle) {
           <tr><td style="padding:4px 12px 4px 0;color:#666;">Properly Parked</td><td style="padding:4px 0;">${usage.properlyParked ? 'Yes' : 'No'}</td></tr>
         </table>
         ${usage.returnObservations ? `<p style="margin-top:12px;color:#666;"><strong>Observations:</strong> ${usage.returnObservations}</p>` : ''}
+        <p style="margin-top:16px;">
+          <a href="${incidentUrl}" style="display:inline-block;padding:8px 16px;background:#1d4ed8;color:#fff;text-decoration:none;border-radius:6px;font-family:sans-serif;font-size:14px;font-weight:600;">View Incident</a>
+        </p>
       `,
     },
     toRecipients: recipients.map((r) => ({

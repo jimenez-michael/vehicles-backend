@@ -17,12 +17,12 @@
     "@anthropic-ai/sdk": "^0.78.0",
     "@apollo/server": "^4.12.0",
     "@azure/storage-blob": "^12.27.0",
-    "archiver": "^7.0.1",
     "@graphql-tools/load-files": "^7.0.1",
     "@graphql-tools/merge": "^9.0.22",
     "@graphql-tools/schema": "^10.0.19",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@prisma/client": "^6.4.1",
+    "archiver": "^7.0.1",
     "cors": "^2.8.5",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.7",
@@ -30,7 +30,8 @@
     "express-jwt": "^8.5.1",
     "graphql": "^16.10.0",
     "graphql-scalars": "^1.24.1",
-    "jwks-rsa": "^3.2.0"
+    "jwks-rsa": "^3.2.0",
+    "node-cron": "^4.2.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",

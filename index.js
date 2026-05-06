@@ -14,6 +14,7 @@ const executableSchema = require('./src/graphql/index');
 const prisma = require('./src/config/prisma');
 const { createAuthMiddleware } = require('./src/config/auth');
 const { registerCaseFilesRoute } = require('./src/routes/caseFiles');
+const { scheduleOverdueReturnReminder } = require('./src/jobs/overdueReturnReminder');
 
 dayjs.extend(localizedFormat);
 
@@ -105,6 +106,8 @@ const bootstrapServer = async () => {
       console.log(`🚀 GraphQL ready at http://0.0.0.0:${port}/graphql`);
       console.log(`🔒 Azure AD authentication enabled for tenant: ${process.env.AZURE_TENANT_ID}`);
     });
+
+    scheduleOverdueReturnReminder(prisma);
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);

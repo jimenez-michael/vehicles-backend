@@ -22,10 +22,10 @@ function ensureAdmin(context) {
   }
 }
 
-async function runOcrAndPersist(context, principalId, blobName, containerName) {
+async function runOcrAndPersist(context, principalId, blobName, containerName, contentType) {
   if (!extractDriverLicense) return null;
   try {
-    const ocr = await extractDriverLicense({ blobName, containerName });
+    const ocr = await extractDriverLicense({ blobName, containerName, contentType });
     if (!ocr) return null;
     return context.prisma.userDriverLicense.update({
       where: { principalId },
@@ -117,6 +117,7 @@ const userDriverLicenseResolvers = {
         principalId,
         blobName,
         containerName,
+        contentType,
       );
       return (
         ocrUpdated ||
@@ -173,6 +174,7 @@ const userDriverLicenseResolvers = {
         principalId,
         existing.blobName,
         existing.containerName,
+        existing.contentType,
       );
       return updated || existing;
     },
