@@ -60,6 +60,7 @@ model VehicleUsage {
   dashboardAlerts    Boolean? // null = N/A
   dashboardAlertDetails String? @db.Text
   pickupObservations String?  @db.Text
+  companions         String?  @db.Text // JSON array of names, e.g. ["Maria Rivera"]
 
   // Return fields
   returnDate         DateTime?
