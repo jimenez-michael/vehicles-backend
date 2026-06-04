@@ -25,6 +25,7 @@ type VehicleUsage {
   dashboardAlerts: Boolean
   dashboardAlertDetails: String
   pickupObservations: String
+  companions: [String!]!
   # Return
   returnDate: DateTime
   returnMileage: Float
@@ -156,6 +157,7 @@ input CreatePickupInput {
   dashboardAlerts: Boolean
   dashboardAlertDetails: String
   pickupObservations: String
+  companions: [String!]
 }
 
 input CompleteReturnInput {
@@ -173,6 +175,7 @@ input CompleteReturnInput {
   properlyParked: Boolean!
   properlyParkedDesc: String
   returnObservations: String
+  companions: [String!]
 }
 
 input UsageRecordsPageInput {
@@ -229,6 +232,7 @@ input UpdateUsageRecordInput {
   properlyParkedDesc: String
   returnObservations: String
   pickupObservations: String
+  companions: [String!]
 }
 
 input UpdateIncidentReportInput {

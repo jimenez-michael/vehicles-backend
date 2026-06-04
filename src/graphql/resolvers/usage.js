@@ -367,6 +367,7 @@ const usageResolvers = {
             dashboardAlerts: input.dashboardAlerts,
             dashboardAlertDetails: input.dashboardAlertDetails,
             pickupObservations: input.pickupObservations,
+            companions: JSON.stringify(input.companions ?? []),
             status: 'IN_USE',
           },
         }),
@@ -412,6 +413,9 @@ const usageResolvers = {
             properlyParked: input.properlyParked,
             properlyParkedDesc: input.properlyParkedDesc,
             returnObservations: input.returnObservations,
+            ...(input.companions !== undefined && {
+              companions: JSON.stringify(input.companions),
+            }),
             status: 'COMPLETED',
           },
         }),
@@ -464,6 +468,9 @@ const usageResolvers = {
           ...(input.properlyParkedDesc !== undefined && { properlyParkedDesc: input.properlyParkedDesc }),
           ...(input.returnObservations !== undefined && { returnObservations: input.returnObservations }),
           ...(input.pickupObservations !== undefined && { pickupObservations: input.pickupObservations }),
+          ...(input.companions !== undefined && {
+            companions: JSON.stringify(input.companions),
+          }),
         },
         include: { vehicle: true },
       });
@@ -707,6 +714,13 @@ const usageResolvers = {
       return context.prisma.userDriverLicense.findUnique({
         where: { principalId: parent.userId },
       });
+    },
+    companions: (parent) => {
+      try {
+        return parent.companions ? JSON.parse(parent.companions) : [];
+      } catch {
+        return [];
+      }
     },
   },
 
