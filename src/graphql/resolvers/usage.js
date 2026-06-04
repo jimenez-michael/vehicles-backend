@@ -413,7 +413,7 @@ const usageResolvers = {
             properlyParked: input.properlyParked,
             properlyParkedDesc: input.properlyParkedDesc,
             returnObservations: input.returnObservations,
-            ...(input.companions !== undefined && {
+            ...(input.companions != null && {
               companions: JSON.stringify(input.companions),
             }),
             status: 'COMPLETED',
@@ -468,7 +468,7 @@ const usageResolvers = {
           ...(input.properlyParkedDesc !== undefined && { properlyParkedDesc: input.properlyParkedDesc }),
           ...(input.returnObservations !== undefined && { returnObservations: input.returnObservations }),
           ...(input.pickupObservations !== undefined && { pickupObservations: input.pickupObservations }),
-          ...(input.companions !== undefined && {
+          ...(input.companions != null && {
             companions: JSON.stringify(input.companions),
           }),
         },
@@ -717,7 +717,8 @@ const usageResolvers = {
     },
     companions: (parent) => {
       try {
-        return parent.companions ? JSON.parse(parent.companions) : [];
+        const value = parent.companions ? JSON.parse(parent.companions) : [];
+        return Array.isArray(value) ? value : [];
       } catch {
         return [];
       }
