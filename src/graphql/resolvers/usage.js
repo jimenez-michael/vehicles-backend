@@ -1,6 +1,13 @@
 const dayjs = require('dayjs');
 const { GraphQLError } = require('graphql');
 const { requireAuth } = require('../../middleware/requireAuth');
+const {
+  getAdminScope,
+  requireAdmin,
+  requireGlobalAdmin,
+  scopedUsageWhere,
+  VECTOR_CONTROL_PROGRAM,
+} = require('../../middleware/adminScope');
 const { sendIncidentEmail } = require('../../utils/sendIncidentEmail');
 const { sendForceCloseEmail } = require('../../utils/sendForceCloseEmail');
 const {
@@ -10,12 +17,8 @@ const {
 
 function ensureOwnerOrAdmin(context, ownerUserId) {
   const userId = context.user.oid || context.user.sub;
-  const roles = context.user.roles || [];
-  if (ownerUserId !== userId && !roles.includes('Admin')) {
-    throw new GraphQLError('You do not have access to this record', {
-      extensions: { code: 'FORBIDDEN', http: { status: 403 } },
-    });
-  }
+  if (ownerUserId === userId) return; // owner self-service
+  requireGlobalAdmin(context);        // admin acting on another's record
 }
 
 const usageResolvers = {
@@ -437,6 +440,7 @@ const usageResolvers = {
     },
 
     updateUsageRecord: async (_, { id, input }, context) => {
+      requireGlobalAdmin(context);
       requireAuth(context);
       const usageId = Number(id);
 
@@ -487,6 +491,7 @@ const usageResolvers = {
     },
 
     deleteUsageRecord: async (_, { id }, context) => {
+      requireGlobalAdmin(context);
       requireAuth(context);
       const usageId = Number(id);
 
@@ -512,6 +517,7 @@ const usageResolvers = {
     },
 
     forceCloseUsage: async (_, { id }, context) => {
+      requireGlobalAdmin(context);
       requireAuth(context);
       const usageId = Number(id);
 
@@ -684,11 +690,8 @@ const usageResolvers = {
       if (!existing) throw new GraphQLError('Attachment not found');
 
       const userId = context.user.oid || context.user.sub;
-      const roles = context.user.roles || [];
-      if (existing.uploadedById !== userId && !roles.includes('Admin')) {
-        throw new GraphQLError('You can only delete attachments you uploaded', {
-          extensions: { code: 'FORBIDDEN', http: { status: 403 } },
-        });
+      if (existing.uploadedById !== userId) {
+        requireGlobalAdmin(context);
       }
 
       // TODO: also delete the underlying blob from Azure storage.
