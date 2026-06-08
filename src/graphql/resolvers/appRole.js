@@ -1,5 +1,5 @@
 const { createAppGraphClient } = require('../../utils/graphAppClient');
-const { requireAuth } = require('../../middleware/requireAuth');
+const { requireGlobalAdmin } = require('../../middleware/adminScope');
 
 let spId = null;
 async function getServicePrincipalId(client) {
@@ -18,7 +18,7 @@ async function getServicePrincipalId(client) {
 const appRoleResolvers = {
   Query: {
     appRoles: async (_, __, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       const client = createAppGraphClient();
       const clientId = process.env.AZURE_CLIENT_ID;
       const res = await client
@@ -30,14 +30,14 @@ const appRoleResolvers = {
     },
 
     appRoleAssignments: async (_, __, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       return context.prisma.appUserRole.findMany({
         orderBy: { createdAt: 'desc' },
       });
     },
 
     usersPage: async (_, { input }, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       const page = Math.max(1, input?.page ?? 1);
       const pageSize = Math.min(100, Math.max(1, input?.pageSize ?? 25));
       const search = input?.search?.trim();
@@ -100,7 +100,7 @@ const appRoleResolvers = {
     },
 
     searchDirectoryUsers: async (_, { search }, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       const client = createAppGraphClient();
       const res = await client
         .api('/users')
@@ -115,7 +115,7 @@ const appRoleResolvers = {
 
   Mutation: {
     assignAppRole: async (_, { principalId, appRoleId, displayName, email }, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       const client = createAppGraphClient();
       const id = await getServicePrincipalId(client);
 
@@ -150,7 +150,7 @@ const appRoleResolvers = {
     },
 
     removeAppRoleAssignment: async (_, { id }, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
 
       // Find the local record to get the Azure assignment ID
       const record = await context.prisma.appUserRole.findUnique({
@@ -171,7 +171,7 @@ const appRoleResolvers = {
     },
 
     syncAppRoleAssignments: async (_, __, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       const client = createAppGraphClient();
       const id = await getServicePrincipalId(client);
 
