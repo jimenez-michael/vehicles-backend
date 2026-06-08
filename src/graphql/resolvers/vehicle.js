@@ -1,5 +1,6 @@
 const { GraphQLError } = require('graphql');
 const { requireAuth } = require('../../middleware/requireAuth');
+const { requireGlobalAdmin } = require('../../middleware/adminScope');
 const {
   generateAttachmentUploadSas,
   generateAttachmentReadSas,
@@ -15,13 +16,7 @@ try {
 }
 
 function ensureAdmin(context) {
-  requireAuth(context);
-  const roles = context.user.roles || [];
-  if (!roles.includes('Admin')) {
-    throw new GraphQLError('Admin role required', {
-      extensions: { code: 'FORBIDDEN', http: { status: 403 } },
-    });
-  }
+  requireGlobalAdmin(context);
 }
 
 // Eager-load reference counts so `Vehicle.hasHistory` resolves without an
@@ -152,7 +147,7 @@ const vehicleResolvers = {
   },
   Mutation: {
     createVehicle: (_, { input }, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       return context.prisma.vehicle.create({
         data: {
           ...input,
@@ -162,7 +157,7 @@ const vehicleResolvers = {
       });
     },
     updateVehicle: (_, { id, input }, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       return context.prisma.vehicle.update({
         where: { id: Number(id) },
         data: {
@@ -302,7 +297,7 @@ const vehicleResolvers = {
     },
 
     deleteVehicle: async (_, { id }, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       const vehicleId = Number(id);
 
       const [usageCount, reservationCount] = await Promise.all([
