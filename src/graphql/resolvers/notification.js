@@ -1,9 +1,9 @@
-const { requireAuth } = require('../../middleware/requireAuth');
+const { requireGlobalAdmin } = require('../../middleware/adminScope');
 
 const notificationResolvers = {
   Query: {
     incidentNotificationRecipients: (_, __, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       return context.prisma.incidentNotificationRecipient.findMany({
         orderBy: { createdAt: 'asc' },
       });
@@ -16,14 +16,14 @@ const notificationResolvers = {
       { userId, userName, userEmail },
       context,
     ) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       return context.prisma.incidentNotificationRecipient.create({
         data: { userId, userName, userEmail },
       });
     },
 
     removeIncidentNotificationRecipient: async (_, { id }, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       return context.prisma.incidentNotificationRecipient.delete({
         where: { id: Number(id) },
       });
