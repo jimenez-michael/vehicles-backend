@@ -38,7 +38,7 @@ async function sendReturnReminderEmail(usage, vehicle) {
   const senderEmail = adminRecipients[0].userEmail;
 
   const vehicleLabel = vehicle
-    ? `${vehicle.vehicleNumber} (${vehicle.licensePlate})`
+    ? `${vehicle.make} ${vehicle.model} — ${vehicle.vehicleNumber} (${vehicle.licensePlate})`
     : 'Unknown Vehicle';
   const pickupDate = dayjs(usage.pickupDate).format('MMM D, YYYY — h:mm A');
   const hoursOut = Math.round(dayjs().diff(dayjs(usage.pickupDate), 'hour', true));

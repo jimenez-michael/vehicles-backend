@@ -57,7 +57,7 @@ async function sendForceCloseEmail({ abandonedUsage, vehicle, actor }) {
   }
 
   const vehicleLabel = vehicle
-    ? `${vehicle.vehicleNumber} (${vehicle.licensePlate})`
+    ? `${vehicle.make} ${vehicle.model} — ${vehicle.vehicleNumber} (${vehicle.licensePlate})`
     : 'Unknown Vehicle';
   const pickupDate = dayjs(abandonedUsage.pickupDate).format('MMM D, YYYY — h:mm A');
   const closedAt = dayjs().format('MMM D, YYYY — h:mm A');

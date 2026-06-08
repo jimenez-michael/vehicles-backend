@@ -8,6 +8,7 @@ type Vehicle {
   program: String!
   subProgram: String
   municipality: String
+  damageNotes: String
   status: String!
   currentMileage: Float!
   createdBy: String
@@ -61,6 +62,7 @@ input CreateVehicleInput {
   program: String!
   subProgram: String
   municipality: String
+  damageNotes: String
   currentMileage: Float
 }
 
@@ -73,6 +75,7 @@ input UpdateVehicleInput {
   program: String
   subProgram: String
   municipality: String
+  damageNotes: String
   currentMileage: Float
   status: String
 }

@@ -35,7 +35,7 @@ async function sendIncidentEmail(usage, vehicle) {
   }
 
   const vehicleLabel = vehicle
-    ? `${vehicle.vehicleNumber} (${vehicle.licensePlate})`
+    ? `${vehicle.make} ${vehicle.model} — ${vehicle.vehicleNumber} (${vehicle.licensePlate})`
     : 'Unknown Vehicle';
 
   const date = dayjs(usage.returnDate).format('MMM D, YYYY — h:mm A');

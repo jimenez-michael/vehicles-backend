@@ -8,7 +8,7 @@ const { createAppGraphClient } = require('./graphAppClient');
 async function sendReservationCancelledEmail(reservation, cancelledByEmail) {
   const vehicle = reservation.vehicle;
   const vehicleLabel = vehicle
-    ? `${vehicle.vehicleNumber} (${vehicle.licensePlate})`
+    ? `${vehicle.make} ${vehicle.model} — ${vehicle.vehicleNumber} (${vehicle.licensePlate})`
     : 'Unknown Vehicle';
 
   const startDate = dayjs(reservation.startDate).format('MMM D, YYYY — h:mm A');
