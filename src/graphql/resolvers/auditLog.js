@@ -1,9 +1,9 @@
-const { requireAuth } = require('../../middleware/requireAuth');
+const { requireGlobalAdmin } = require('../../middleware/adminScope');
 
 const auditLogResolvers = {
   Query: {
     auditLogsPage: async (_, { input }, context) => {
-      requireAuth(context);
+      requireGlobalAdmin(context);
       const page = Math.max(1, input?.page ?? 1);
       const pageSize = Math.min(100, Math.max(1, input?.pageSize ?? 25));
       const search = input?.search?.trim();
