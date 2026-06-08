@@ -1,5 +1,11 @@
 const { GraphQLError } = require('graphql');
 const { requireAuth } = require('../../middleware/requireAuth');
+const {
+  getAdminScope,
+  requireAdmin,
+  requireGlobalAdmin,
+  scopedUsageWhere,
+} = require('../../middleware/adminScope');
 const { sendReservationCancelledEmail } = require('../../utils/sendReservationCancelledEmail');
 const { sendOvernightApprovalRequestEmail } = require('../../utils/sendOvernightApprovalRequestEmail');
 const { sendOvernightApprovalDecisionEmail } = require('../../utils/sendOvernightApprovalDecisionEmail');
@@ -193,15 +199,14 @@ const reservationResolvers = {
       requireAuth(context);
       const reservationId = Number(id);
       const userId = context.user.oid || context.user.sub;
-      const roles = context.user.roles || [];
 
       const existing = await context.prisma.reservation.findUnique({
         where: { id: reservationId },
       });
       if (!existing) throw new GraphQLError('Reservation not found');
 
-      if (existing.userId !== userId && !roles.includes('Admin')) {
-        throw new GraphQLError('You can only edit your own reservations');
+      if (existing.userId !== userId) {
+        requireGlobalAdmin(context);
       }
 
       // If dates changed, re-check overlap
@@ -292,8 +297,8 @@ const reservationResolvers = {
     decideReservationApproval: async (_, { id, input }, context) => {
       requireAuth(context);
       const roles = context.user.roles || [];
-      if (!roles.includes('Approver') && !roles.includes('Admin')) {
-        throw new GraphQLError('Only approvers can decide overnight reservations', {
+      if (!roles.includes('Approver') && getAdminScope(context.user) !== 'global') {
+        throw new GraphQLError('Only approvers or global admins can decide approvals', {
           extensions: { code: 'FORBIDDEN' },
         });
       }
@@ -348,7 +353,6 @@ const reservationResolvers = {
       requireAuth(context);
       const reservationId = Number(id);
       const userId = context.user.oid || context.user.sub;
-      const roles = context.user.roles || [];
 
       const existing = await context.prisma.reservation.findUnique({
         where: { id: reservationId },
@@ -356,8 +360,8 @@ const reservationResolvers = {
       });
       if (!existing) throw new GraphQLError('Reservation not found');
 
-      if (existing.userId !== userId && !roles.includes('Admin')) {
-        throw new GraphQLError('You can only cancel your own reservations');
+      if (existing.userId !== userId) {
+        requireGlobalAdmin(context);
       }
 
       if (existing.status === 'CANCELLED') {
@@ -387,7 +391,6 @@ const reservationResolvers = {
       requireAuth(context);
       const reservationId = Number(id);
       const userId = context.user.oid || context.user.sub;
-      const roles = context.user.roles || [];
 
       const existing = await context.prisma.reservation.findUnique({
         where: { id: reservationId },
@@ -395,8 +398,8 @@ const reservationResolvers = {
       });
       if (!existing) throw new GraphQLError('Reservation not found');
 
-      if (existing.userId !== userId && !roles.includes('Admin')) {
-        throw new GraphQLError('You can only delete your own reservations');
+      if (existing.userId !== userId) {
+        requireGlobalAdmin(context);
       }
 
       await context.prisma.reservation.delete({
