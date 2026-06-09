@@ -189,8 +189,12 @@ const usageResolvers = {
     },
 
     fleetStats: async (_, __, context) => {
-      requireAuth(context);
-      const completedWhere = { status: 'COMPLETED' };
+      requireAdmin(context);
+      const scope = getAdminScope(context.user);
+      const usageScope = scopedUsageWhere(scope); // {} or { userEmail: { endsWith } }
+      const vehicleScope =
+        scope === 'vectorControl' ? { program: VECTOR_CONTROL_PROGRAM } : {};
+      const completedWhere = { status: 'COMPLETED', ...usageScope };
       const now = dayjs();
       const thisMonthStart = now.startOf('month').toDate();
       const lastMonthStart = now.subtract(1, 'month').startOf('month').toDate();
@@ -211,8 +215,8 @@ const usageResolvers = {
         incidentsThisMonth,
         incidentsLastMonth,
       ] = await Promise.all([
-        context.prisma.vehicle.count(),
-        context.prisma.vehicle.count({ where: { status: 'IN_USE' } }),
+        context.prisma.vehicle.count({ where: vehicleScope }),
+        context.prisma.vehicle.count({ where: { status: 'IN_USE', ...vehicleScope } }),
         context.prisma.vehicleUsage.count({ where: completedWhere }),
         context.prisma.vehicleUsage.aggregate({
           where: completedWhere,
@@ -243,23 +247,25 @@ const usageResolvers = {
           },
         }),
         context.prisma.vehicleUsage.findMany({
+          where: usageScope,
           orderBy: { pickupDate: 'desc' },
           take: 10,
           include: { vehicle: true },
         }),
         context.prisma.vehicleUsage.count({
-          where: { pickupDate: { gte: thisMonthStart } },
+          where: { pickupDate: { gte: thisMonthStart }, ...usageScope },
         }),
         context.prisma.vehicleUsage.count({
-          where: { pickupDate: { gte: lastMonthStart, lt: thisMonthStart } },
+          where: { pickupDate: { gte: lastMonthStart, lt: thisMonthStart }, ...usageScope },
         }),
         context.prisma.vehicleUsage.count({
-          where: { pickupDate: { gte: thisMonthStart }, incidentOccurred: true },
+          where: { pickupDate: { gte: thisMonthStart }, incidentOccurred: true, ...usageScope },
         }),
         context.prisma.vehicleUsage.count({
           where: {
             pickupDate: { gte: lastMonthStart, lt: thisMonthStart },
             incidentOccurred: true,
+            ...usageScope,
           },
         }),
       ]);
