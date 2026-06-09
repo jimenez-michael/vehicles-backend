@@ -61,6 +61,12 @@ const usageResolvers = {
       const sortBy = input?.sortBy ?? 'pickupDate';
       const sortDir = input?.sortDir === 'asc' ? 'asc' : 'desc';
 
+      let adminScope = null;
+      if (scope === 'all') {
+        requireAdmin(context); // 'all' is an admin-only view
+        adminScope = getAdminScope(context.user);
+      }
+
       const allowedSort = new Set(['pickupDate', 'returnDate', 'userName', 'status']);
       const orderByField = allowedSort.has(sortBy) ? sortBy : 'pickupDate';
 
@@ -68,6 +74,9 @@ const usageResolvers = {
       if (scope === 'mine') {
         const userId = context.user.oid || context.user.sub;
         and.push({ userId });
+      }
+      if (adminScope === 'vectorControl') {
+        and.push(scopedUsageWhere('vectorControl'));
       }
       if (status && status !== 'all') and.push({ status });
       if (incidentsOnly) and.push({ incidentOccurred: true });
