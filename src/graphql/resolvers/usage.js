@@ -7,6 +7,7 @@ const {
   requireGlobalAdmin,
   scopedUsageWhere,
   VECTOR_CONTROL_PROGRAM,
+  VECTOR_CONTROL_EMAIL_DOMAIN,
 } = require('../../middleware/adminScope');
 const { sendIncidentEmail } = require('../../utils/sendIncidentEmail');
 const { sendForceCloseEmail } = require('../../utils/sendForceCloseEmail');
@@ -184,7 +185,23 @@ const usageResolvers = {
         include: { vehicle: true, attachments: true },
       });
       if (!usage) return null;
-      ensureOwnerOrAdmin(context, usage.userId);
+      // Reading an incident report: owners always; non-owners must be admins,
+      // and vector-control admins only for vector-control-domain records.
+      const callerId = context.user.oid || context.user.sub;
+      if (usage.userId !== callerId) {
+        requireAdmin(context);
+        if (
+          getAdminScope(context.user) === 'vectorControl' &&
+          !(usage.userEmail || '')
+            .toLowerCase()
+            .endsWith(VECTOR_CONTROL_EMAIL_DOMAIN)
+        ) {
+          throw new GraphQLError(
+            'This action is not available for your account',
+            { extensions: { code: 'FORBIDDEN', http: { status: 403 } } },
+          );
+        }
+      }
       return usage;
     },
 
@@ -456,7 +473,6 @@ const usageResolvers = {
 
     updateUsageRecord: async (_, { id, input }, context) => {
       requireGlobalAdmin(context);
-      requireAuth(context);
       const usageId = Number(id);
 
       const existing = await context.prisma.vehicleUsage.findUnique({
@@ -507,7 +523,6 @@ const usageResolvers = {
 
     deleteUsageRecord: async (_, { id }, context) => {
       requireGlobalAdmin(context);
-      requireAuth(context);
       const usageId = Number(id);
 
       const existing = await context.prisma.vehicleUsage.findUnique({
@@ -533,7 +548,6 @@ const usageResolvers = {
 
     forceCloseUsage: async (_, { id }, context) => {
       requireGlobalAdmin(context);
-      requireAuth(context);
       const usageId = Number(id);
 
       const existing = await context.prisma.vehicleUsage.findUnique({

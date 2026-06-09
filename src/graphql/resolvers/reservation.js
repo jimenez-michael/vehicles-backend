@@ -2,7 +2,6 @@ const { GraphQLError } = require('graphql');
 const { requireAuth } = require('../../middleware/requireAuth');
 const {
   getAdminScope,
-  requireAdmin,
   requireGlobalAdmin,
   scopedUsageWhere,
 } = require('../../middleware/adminScope');
@@ -48,9 +47,11 @@ const reservationResolvers = {
       const sortBy = input?.sortBy ?? 'startDate';
       const sortDir = input?.sortDir === 'asc' ? 'asc' : 'desc';
 
+      // The reservations list is a shared availability view open to any
+      // authenticated user (scope: 'all'); only vector-control admins are
+      // narrowed to their domain. Per-record write actions are gated elsewhere.
       let adminScope = null;
       if (scope === 'all') {
-        requireAdmin(context);
         adminScope = getAdminScope(context.user);
       }
 
