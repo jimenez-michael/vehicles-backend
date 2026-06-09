@@ -48,6 +48,12 @@ const reservationResolvers = {
       const sortBy = input?.sortBy ?? 'startDate';
       const sortDir = input?.sortDir === 'asc' ? 'asc' : 'desc';
 
+      let adminScope = null;
+      if (scope === 'all') {
+        requireAdmin(context);
+        adminScope = getAdminScope(context.user);
+      }
+
       const allowedSort = new Set(['startDate', 'endDate', 'status', 'createdAt']);
       const orderByField = allowedSort.has(sortBy) ? sortBy : 'startDate';
 
@@ -55,6 +61,9 @@ const reservationResolvers = {
       if (scope === 'mine') {
         const userId = context.user.oid || context.user.sub;
         and.push({ userId });
+      }
+      if (adminScope === 'vectorControl') {
+        and.push(scopedUsageWhere('vectorControl'));
       }
       if (status && status !== 'all') and.push({ status });
       if (search) {
