@@ -399,6 +399,8 @@ const usageResolvers = {
             mirrorsOkDesc: input.mirrorsOkDesc,
             tiresOk: input.tiresOk,
             tiresOkDesc: input.tiresOkDesc,
+            magneticSignsOk: input.magneticSignsOk ?? null,
+            magneticSignsDesc: input.magneticSignsDesc ?? null,
             dashboardAlerts: input.dashboardAlerts,
             dashboardAlertDetails: input.dashboardAlertDetails,
             pickupObservations: input.pickupObservations,
@@ -447,6 +449,8 @@ const usageResolvers = {
             interiorConditionDesc: input.interiorConditionDesc,
             properlyParked: input.properlyParked,
             properlyParkedDesc: input.properlyParkedDesc,
+            magneticSignsOk: input.magneticSignsOk ?? null,
+            magneticSignsDesc: input.magneticSignsDesc ?? null,
             returnObservations: input.returnObservations,
             ...(input.companions != null && {
               companions: JSON.stringify(input.companions),
@@ -503,6 +507,8 @@ const usageResolvers = {
           ...(input.properlyParkedDesc !== undefined && { properlyParkedDesc: input.properlyParkedDesc }),
           ...(input.returnObservations !== undefined && { returnObservations: input.returnObservations }),
           ...(input.pickupObservations !== undefined && { pickupObservations: input.pickupObservations }),
+          ...(input.magneticSignsOk !== undefined && { magneticSignsOk: input.magneticSignsOk }),
+          ...(input.magneticSignsDesc !== undefined && { magneticSignsDesc: input.magneticSignsDesc }),
           ...(input.companions != null && {
             companions: JSON.stringify(input.companions),
           }),

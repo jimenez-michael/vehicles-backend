@@ -22,6 +22,8 @@ type VehicleUsage {
   mirrorsOkDesc: String
   tiresOk: Boolean!
   tiresOkDesc: String
+  magneticSignsOk: Boolean
+  magneticSignsDesc: String
   dashboardAlerts: Boolean
   dashboardAlertDetails: String
   pickupObservations: String
@@ -154,6 +156,8 @@ input CreatePickupInput {
   mirrorsOkDesc: String
   tiresOk: Boolean!
   tiresOkDesc: String
+  magneticSignsOk: Boolean
+  magneticSignsDesc: String
   dashboardAlerts: Boolean
   dashboardAlertDetails: String
   pickupObservations: String
@@ -174,6 +178,8 @@ input CompleteReturnInput {
   interiorConditionDesc: String
   properlyParked: Boolean!
   properlyParkedDesc: String
+  magneticSignsOk: Boolean
+  magneticSignsDesc: String
   returnObservations: String
   companions: [String!]
 }
@@ -232,6 +238,8 @@ input UpdateUsageRecordInput {
   properlyParkedDesc: String
   returnObservations: String
   pickupObservations: String
+  magneticSignsOk: Boolean
+  magneticSignsDesc: String
   companions: [String!]
 }
 
