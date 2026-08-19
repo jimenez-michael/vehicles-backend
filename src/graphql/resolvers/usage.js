@@ -232,7 +232,7 @@ const usageResolvers = {
         incidentsThisMonth,
         incidentsLastMonth,
       ] = await Promise.all([
-        context.prisma.vehicle.count({ where: vehicleScope }),
+        context.prisma.vehicle.count({ where: { status: { not: 'OUT_OF_SERVICE' }, ...vehicleScope } }),
         context.prisma.vehicle.count({ where: { status: 'IN_USE', ...vehicleScope } }),
         context.prisma.vehicleUsage.count({ where: completedWhere }),
         context.prisma.vehicleUsage.aggregate({
