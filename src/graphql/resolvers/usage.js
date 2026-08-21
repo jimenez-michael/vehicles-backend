@@ -270,19 +270,19 @@ const usageResolvers = {
           include: { vehicle: true },
         }),
         context.prisma.vehicleUsage.count({
-          where: { pickupDate: { gte: thisMonthStart }, ...usageScope },
+          where: { pickupDate: { gte: thisMonthStart }, ...completedWhere },
         }),
         context.prisma.vehicleUsage.count({
-          where: { pickupDate: { gte: lastMonthStart, lt: thisMonthStart }, ...usageScope },
+          where: { pickupDate: { gte: lastMonthStart, lt: thisMonthStart }, ...completedWhere },
         }),
         context.prisma.vehicleUsage.count({
-          where: { pickupDate: { gte: thisMonthStart }, incidentOccurred: true, ...usageScope },
+          where: { pickupDate: { gte: thisMonthStart }, incidentOccurred: true, ...completedWhere },
         }),
         context.prisma.vehicleUsage.count({
           where: {
             pickupDate: { gte: lastMonthStart, lt: thisMonthStart },
             incidentOccurred: true,
-            ...usageScope,
+            ...completedWhere,
           },
         }),
       ]);
