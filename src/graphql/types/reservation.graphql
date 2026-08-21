@@ -66,6 +66,7 @@ input ReservationsPageInput {
   scope: String = "all"
   sortBy: String = "startDate"
   sortDir: String = "desc"
+  timeRange: String
 }
 
 type ReservationsPage {

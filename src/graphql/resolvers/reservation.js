@@ -1,5 +1,11 @@
 const { GraphQLError } = require('graphql');
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
 const { requireAuth } = require('../../middleware/requireAuth');
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 const {
   getAdminScope,
   requireGlobalAdmin,
@@ -67,6 +73,20 @@ const reservationResolvers = {
         and.push(scopedUsageWhere('vectorControl'));
       }
       if (status && status !== 'all') and.push({ status });
+      const timeRange = input?.timeRange;
+      if (timeRange === 'upcoming' || timeRange === 'past') {
+        // Day boundary in the fleet's local timezone: a reservation that
+        // ended earlier today still counts as "upcoming" until midnight.
+        const todayStart = dayjs()
+          .tz('America/Puerto_Rico')
+          .startOf('day')
+          .toDate();
+        and.push(
+          timeRange === 'upcoming'
+            ? { endDate: { gte: todayStart } }
+            : { endDate: { lt: todayStart } },
+        );
+      }
       if (search) {
         and.push({
           OR: [
