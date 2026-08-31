@@ -9,6 +9,7 @@ const {
   VECTOR_CONTROL_PROGRAM,
   VECTOR_CONTROL_EMAIL_DOMAIN,
 } = require('../../middleware/adminScope');
+const { mayClaimVehicle } = require('../../middleware/vehicleClaim');
 const { sendIncidentEmail } = require('../../utils/sendIncidentEmail');
 const { sendForceCloseEmail } = require('../../utils/sendForceCloseEmail');
 const {
@@ -553,7 +554,7 @@ const usageResolvers = {
     },
 
     forceCloseUsage: async (_, { id }, context) => {
-      requireGlobalAdmin(context);
+      requireAuth(context);
       const usageId = Number(id);
 
       const existing = await context.prisma.vehicleUsage.findUnique({
@@ -570,6 +571,27 @@ const usageResolvers = {
         name: context.user.name || context.user.preferred_username || null,
         email: context.user.preferred_username || null,
       };
+
+      // A driver standing at an abandoned vehicle must be able to unblock it,
+      // so global admins are not the only ones allowed through: the caller may
+      // also be the driver who is next in line for the vehicle. Every close is
+      // audited and emailed either way.
+      const isGlobalAdmin = getAdminScope(context.user) === 'global';
+      const actorRole = isGlobalAdmin ? 'globalAdmin' : 'nextDriver';
+      if (!isGlobalAdmin) {
+        if (existing.userId === actor.id) {
+          throw new GraphQLError(
+            'This is your own trip — return the vehicle instead.',
+            { extensions: { code: 'FORBIDDEN', http: { status: 403 } } },
+          );
+        }
+        if (!(await mayClaimVehicle(context, existing.vehicle))) {
+          throw new GraphQLError(
+            'You need a current reservation for this vehicle to close the previous trip. Contact a fleet administrator.',
+            { extensions: { code: 'FORBIDDEN', http: { status: 403 } } },
+          );
+        }
+      }
 
       const [usage] = await context.prisma.$transaction([
         context.prisma.vehicleUsage.update({
@@ -600,6 +622,7 @@ const usageResolvers = {
               originalUserEmail: existing.userEmail,
               pickupDate: existing.pickupDate,
               pickupMileage: existing.pickupMileage,
+              actorRole,
             }),
           },
         }),
