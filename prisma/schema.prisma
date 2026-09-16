@@ -257,3 +257,54 @@ model UserDriverLicense {
   @@index([expiresOn])
   @@map("user_driver_licenses")
 }
+
+// ---- EHS Training Reservations (app separada, mismo Azure Web App/DB) ----
+// Modelos prefijados "Ehs" para no chocar con los nombres ya usados arriba
+// (p.ej. Reservation). Las tablas usan el prefijo "ehs_" en la base de datos.
+
+model EhsUser {
+  id           String           @id @default(uuid()) @db.VarChar(36)
+  email        String           @unique @db.VarChar(255)
+  name         String           @db.VarChar(255)
+  jobTitle     String?          @db.VarChar(255)
+  department   String?          @db.VarChar(255)
+  isAdmin      Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  reservations EhsReservation[]
+
+  @@map("ehs_users")
+}
+
+model EhsTraining {
+  id           String           @id @default(uuid()) @db.VarChar(36)
+  title        String           @db.VarChar(255)
+  description  String?          @db.Text
+  location     String?          @db.VarChar(255)
+  startAt      DateTime
+  endAt        DateTime?
+  capacity     Int              @default(20)
+  createdBy    String?          @db.VarChar(255)
+  createdAt    DateTime         @default(now())
+  reservations EhsReservation[]
+
+  @@index([startAt])
+  @@map("ehs_trainings")
+}
+
+model EhsReservation {
+  id          String      @id @default(uuid()) @db.VarChar(36)
+  trainingId  String      @db.VarChar(36)
+  training    EhsTraining @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  userId      String      @db.VarChar(36)
+  user        EhsUser     @relation(fields: [userId], references: [id])
+  status      String      @default("confirmed") @db.VarChar(20) // confirmed, cancelled
+  reservedAt  DateTime    @default(now())
+  checkedInAt DateTime?
+  checkedInBy String?     @db.VarChar(255)
+
+  @@unique([trainingId, userId])
+  @@index([trainingId])
+  @@index([userId])
+  @@index([status])
+  @@map("ehs_reservations")
+}

@@ -15,6 +15,7 @@ const prisma = require('./src/config/prisma');
 const { createAuthMiddleware } = require('./src/config/auth');
 const { registerCaseFilesRoute } = require('./src/routes/caseFiles');
 const { scheduleOverdueReturnReminder } = require('./src/jobs/overdueReturnReminder');
+const ehsTrainingRouter = require('./src/ehs-training');
 
 dayjs.extend(localizedFormat);
 
@@ -70,7 +71,12 @@ const bootstrapServer = async () => {
     app.use(cors());
     app.use(express.json());
 
-    // Apply JWT middleware to all routes
+    // EHS Training Reservations: app REST separada con su propia sesion (EHS_SESSION_SECRET),
+    // montada antes del checkJwt de Azure AD para no pasar por el (usa su propio app
+    // registration EHS_AZURE_*, distinto al de vehicles).
+    app.use('/api/ehs-training', ehsTrainingRouter);
+
+    // Apply JWT middleware to all other routes
     app.use(checkJwt);
 
     // Error handling for JWT failures
