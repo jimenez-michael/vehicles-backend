@@ -2,6 +2,7 @@ const { Router } = require('express');
 const { trainingsRepo, reservationsRepo } = require('../db');
 const { requireAuth } = require('../middleware/requireAuth');
 const { requireAdmin } = require('../middleware/requireAdmin');
+const { sendTrainingInvite } = require('../utils/sendTrainingInvite');
 
 const router = Router();
 
@@ -45,10 +46,12 @@ router.post('/trainings/:id/reserve', requireAuth, async (req, res) => {
       return res.status(409).json({ error: 'Ya tienes una reservacion para este adiestramiento' });
     }
     await reservationsRepo.setStatus(existing.id, 'confirmed');
+    sendTrainingInvite(training, req.user).catch(() => {});
     return res.status(200).json({ id: existing.id });
   }
 
   const reservation = await reservationsRepo.create({ trainingId: training.id, userId: req.user.id });
+  sendTrainingInvite(training, req.user).catch(() => {});
   res.status(201).json({ id: reservation.id });
 });
 
