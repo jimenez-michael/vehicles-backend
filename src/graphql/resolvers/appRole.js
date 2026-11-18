@@ -1,19 +1,6 @@
 const { createAppGraphClient } = require('../../utils/graphAppClient');
 const { requireGlobalAdmin } = require('../../middleware/adminScope');
-
-let spId = null;
-async function getServicePrincipalId(client) {
-  if (spId) return spId;
-  const clientId = process.env.AZURE_CLIENT_ID;
-  const res = await client
-    .api('/servicePrincipals')
-    .filter(`appId eq '${clientId}'`)
-    .select('id')
-    .get();
-  spId = res.value[0]?.id;
-  if (!spId) throw new Error('Service principal not found');
-  return spId;
-}
+const { getServicePrincipalId } = require('../../utils/servicePrincipal');
 
 const appRoleResolvers = {
   Query: {
