@@ -1,7 +1,11 @@
 const { GraphQLError } = require('graphql');
 const { requireTrainingAuth } = require('../../middleware/requireAuth');
 const { course, publicCourse } = require('../../training/fleetSafetyCourse');
-const { grantVehiclesAccess } = require('../../services/trainingAccess');
+const { grantVehiclesAccess, hasVehiclesAccess } = require('../../services/trainingAccess');
+
+// Graph can lag right after an assignment is created, so a grant recorded this
+// recently counts as active even if Entra does not list it yet.
+const GRANT_GRACE_MS = 2 * 60 * 1000;
 
 function badInput(message) {
   return new GraphQLError(message, { extensions: { code: 'BAD_USER_INPUT' } });
@@ -42,13 +46,29 @@ async function buildStatus(prisma, who, progress) {
     prisma.appUserRole.findFirst({ where: { principalId: who.principalId } }),
   ]);
   const videosWatched = parseVideos(progress);
+
+  // Entra decides. Local flags are only a fallback if Graph is unreachable.
+  let accessGranted;
+  try {
+    accessGranted = await hasVehiclesAccess(who.principalId);
+    if (
+      !accessGranted &&
+      progress.accessGrantedAt &&
+      Date.now() - new Date(progress.accessGrantedAt).getTime() < GRANT_GRACE_MS
+    ) {
+      accessGranted = true;
+    }
+  } catch (err) {
+    console.error('[training] access check failed, using local flags:', err?.message || err);
+    accessGranted = !!progress.accessGrantedAt || !!existingRole;
+  }
+
   return {
     videosWatched,
     allVideosWatched: course.videos.every((v) => videosWatched.includes(v.id)),
     passed: !!progress.passedAt,
     passedAt: progress.passedAt,
-    // Existing drivers assigned by an admin already have access.
-    accessGranted: !!progress.accessGrantedAt || !!existingRole,
+    accessGranted,
     accessGrantedAt: progress.accessGrantedAt,
     grantError: progress.grantError,
     attemptCount,
@@ -171,9 +191,9 @@ const trainingResolvers = {
             data: { passedAt: attempt.createdAt },
           });
         }
-        if (!progress.accessGrantedAt) {
-          progress = await tryGrant(prisma, who);
-        }
+        // Always try: grantVehiclesAccess is idempotent and re-grants if the
+        // role was revoked in Entra after an earlier grant.
+        progress = await tryGrant(prisma, who);
       }
 
       return {
@@ -189,9 +209,7 @@ const trainingResolvers = {
       if (!progress.passedAt) {
         throw badInput('Debes aprobar la prueba primero.');
       }
-      if (!progress.accessGrantedAt) {
-        progress = await tryGrant(context.prisma, who);
-      }
+      progress = await tryGrant(context.prisma, who);
       return buildStatus(context.prisma, who, progress);
     },
   },
