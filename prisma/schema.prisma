@@ -258,6 +258,42 @@ model UserDriverLicense {
   @@map("user_driver_licenses")
 }
 
+// --- Fleet safety training (gate for vehicles-app access) ---
+
+model TrainingProgress {
+  principalId     String    @id @db.VarChar(255) // Azure AD oid
+  displayName     String?   @db.VarChar(255)
+  email           String?   @db.VarChar(255)
+  videosWatched   String    @default("[]") @db.NVarChar(Max) // JSON array of video ids
+  passedAt        DateTime?
+  accessGrantedAt DateTime?
+  grantError      String?   @db.NVarChar(Max)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([email])
+  @@map("training_progress")
+}
+
+model TrainingAttempt {
+  id            Int      @id @default(autoincrement())
+  principalId   String   @db.VarChar(255)
+  displayName   String?  @db.VarChar(255)
+  email         String?  @db.VarChar(255)
+  area          String   @db.VarChar(100)
+  courseVersion String   @db.VarChar(50)
+  score         Int
+  total         Int
+  percentage    Int
+  passed        Boolean
+  answers       String   @db.NVarChar(Max) // JSON [{questionId, choiceId, correct}]
+  createdAt     DateTime @default(now())
+
+  @@index([principalId])
+  @@index([createdAt])
+  @@map("training_attempts")
+}
+
 // ---- EHS Training Reservations (app separada, mismo Azure Web App/DB) ----
 // Modelos prefijados "Ehs" para no chocar con los nombres ya usados arriba
 // (p.ej. Reservation). Las tablas usan el prefijo "ehs_" en la base de datos.

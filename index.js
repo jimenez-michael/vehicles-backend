@@ -12,7 +12,7 @@ const dayjs = require('dayjs');
 const localizedFormat = require('dayjs/plugin/localizedFormat');
 const executableSchema = require('./src/graphql/index');
 const prisma = require('./src/config/prisma');
-const { createAuthMiddleware } = require('./src/config/auth');
+const { createAuthMiddleware, scopeTrainingTokens } = require('./src/config/auth');
 const { registerCaseFilesRoute } = require('./src/routes/caseFiles');
 const { scheduleOverdueReturnReminder } = require('./src/jobs/overdueReturnReminder');
 const ehsTrainingRouter = require('./src/ehs-training');
@@ -87,6 +87,9 @@ const bootstrapServer = async () => {
       return next();
     });
 
+    // Training-app tokens are only usable by the training resolvers.
+    app.use(scopeTrainingTokens);
+
     app.get('/', (req, res) => {
       res.status(200).send('Vehicles Backend API Running');
     });
@@ -102,6 +105,7 @@ const bootstrapServer = async () => {
           return {
             prisma,
             user: req?.auth || null,
+            trainingUser: req?.trainingAuth || null,
           };
         },
       }),

@@ -1,0 +1,82 @@
+# Fleet safety training — gate for vehicles-app access.
+# Callable with tokens from either the vehicles app or the training app.
+
+type TrainingVideo {
+  id: ID!
+  title: String!
+  youtubeId: String!
+}
+
+type TrainingChoice {
+  id: ID!
+  text: String!
+}
+
+type TrainingQuestion {
+  id: ID!
+  text: String!
+  choices: [TrainingChoice!]!
+}
+
+type TrainingCourse {
+  version: String!
+  title: String!
+  passingPercentage: Int!
+  areas: [String!]!
+  videos: [TrainingVideo!]!
+  questions: [TrainingQuestion!]!
+}
+
+type TrainingAttemptSummary {
+  id: Int!
+  area: String!
+  score: Int!
+  total: Int!
+  percentage: Int!
+  passed: Boolean!
+  createdAt: DateTime!
+}
+
+type TrainingStatus {
+  videosWatched: [ID!]!
+  allVideosWatched: Boolean!
+  passed: Boolean!
+  passedAt: DateTime
+  accessGranted: Boolean!
+  accessGrantedAt: DateTime
+  grantError: String
+  attemptCount: Int!
+  lastAttempt: TrainingAttemptSummary
+}
+
+type TrainingQuestionResult {
+  questionId: ID!
+  correct: Boolean!
+}
+
+type TrainingSubmitResult {
+  attempt: TrainingAttemptSummary!
+  results: [TrainingQuestionResult!]!
+  status: TrainingStatus!
+}
+
+input TrainingAnswerInput {
+  questionId: ID!
+  choiceId: ID!
+}
+
+input SubmitTrainingAttemptInput {
+  area: String!
+  answers: [TrainingAnswerInput!]!
+}
+
+extend type Query {
+  trainingCourse: TrainingCourse!
+  myTrainingStatus: TrainingStatus!
+}
+
+extend type Mutation {
+  markTrainingVideoWatched(videoId: ID!): TrainingStatus!
+  submitTrainingAttempt(input: SubmitTrainingAttemptInput!): TrainingSubmitResult!
+  retryTrainingAccessGrant: TrainingStatus!
+}
